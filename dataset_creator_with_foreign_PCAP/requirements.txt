@@ -11,7 +11,7 @@ cryptography==1.2.3
 decorator==4.0.6
 defer==1.0.6
 dirspec==13.10
-httplib2==0.9.1
+httplib2==0.18.0
 idna==2.6
 ipython==2.4.1
 Logbook==1.1.0
