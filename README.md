@@ -111,4 +111,8 @@ You can find the original research paper on [researchgate](https://www.researchg
 1. In this mode you can load an existing PCAP and make a dataset in csv format. Specify the path to the input pcap with `--sourcefile <path>` The default is stored in `input_file_path` in `set.py`
 1. The software allows users to define a time window for each aggregation record. Specify the time in _msec_ with the `--window <size>` offering.. TThe default is stored in  `set.py` . The time is in milliseconds. 
 
-
+### Capturing pcap files
+Try this
+```
+sudo tshark  -i eth0 -a duration:120 -w /tmp/foo.pcap -F pcap
+```
