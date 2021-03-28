@@ -21,64 +21,64 @@
 # SOFTWARE.
 
 
-global instance
-instance=1
+global out_record_count
+out_record_count = 1
 global localdat
-localdat={}
+localdat = {}
 
 
 global tcp_frame_length
-tcp_frame_length=0
+tcp_frame_length = 0
 global tcp_ip_length
-tcp_ip_length=0
+tcp_ip_length = 0
 global tcp_length
-tcp_length=0
+tcp_length = 0
 
 global udp_frame_length
-udp_frame_length=0
+udp_frame_length = 0
 global udp_ip_length
-udp_ip_length=0
+udp_ip_length = 0
 global udp_length
-udp_length=0
+udp_length = 0
 
 global arp_frame_length
-arp_frame_length=0
+arp_frame_length = 0
 
 global src_length
-src_length=0
+src_length = 0
 
 global dst_length
-dst_length=0
+dst_length = 0
 
 
-global ssl
-ssl=0
+global tls
+tls = 0
 global http
-http=0
+http = 0
 global ftp
-ftp=0
+ftp = 0
 global ssh
-ssh=0
+ssh = 0
 global dns
-dns=0
+dns = 0
 global smtp
-smtp=0
+smtp = 0
 global dhcp
-dhcp=0
+dhcp = 0
 
 global tcp
-tcp=0
+tcp = 0
 global udp
-udp=0
+udp = 0
 global arp
-arp=0
+arp = 0
 
 global IDs
-IDs=[]
+IDs = []
 
 
 global ports
-ports=[]
+ports = []
 
 global tot_pack
-tot_pack=0
+tot_pack = 0

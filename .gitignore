@@ -1,2 +1,5 @@
 ./__pycache__/
 ./dataset_creator_with_foreign_PCAP/__pycache__/
+
+__pycache__
+*.csv

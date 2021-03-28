@@ -21,66 +21,73 @@
 # SOFTWARE.
 
 
-
 from queue import *
 import set
 
 global packet_count
-packet_count=0
+packet_count = 0
 global tcp_count
-tcp_count=0
+tcp_count = 0
 global udp_count
-udp_count=0
+udp_count = 0
 global arp_count
-arp_count=0
-
-global allkeyval
-allkeyval={}
+arp_count = 0
 
 global sharedQ
-sharedQ=Queue()
+sharedQ = Queue()
 
-global notTCP
-notTCP=Queue() 
+global notTCPQ
+notTCPQ = Queue()
 
-global notUDP
-notUDP=Queue() 
+global notUDPQ
+notUDPQ = Queue()
 
-global notARP
-notARP=Queue() 
+global notARPQ
+notARPQ = Queue()
 
 global tcp
-tcp={}
-
-global tcpQ
-tcpQ=Queue()
+tcp = {}
 
 global udp
-udp={}
-
-global udpQ
-udpQ=Queue()
+udp = {}
 
 global arp
-arp={}
-
-global arpQ
-arpQ=Queue()
+arp = {}
 
 global servicesQ
-servicesQ=Queue()
+servicesQ = Queue()
 
 global timesQ
-timesQ=Queue()
+timesQ = Queue()
 
 global timed
-timed=Queue()
+timed = Queue()
 
-global Dataset
-Dataset={}
-
+# when we started
 global starting
-starting=0
+starting = 0
 
+# sliding window size
+global time_window
+time_window = 5000  # msec
+
+# when streaming - how long to run in seconds
 global howlong
-howlong=60000
+howlong = 120
+
+global interface
+interface = "eth0"
+
+# setting this to some value tells capture to read from file
+global input_file_name
+input_file_name = None
+
+global output_file_name
+output_file_name = 'dataset.csv'
+
+global tshark_program
+tshark_program = "tshark"
+
+# when reading a file
+global end_of_file
+end_of_file = False

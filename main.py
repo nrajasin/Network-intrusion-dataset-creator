@@ -20,128 +20,55 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-
-import threading
-import subprocess
-import json
-from queue import *
-import ipaddress
 import set
 from detectors import *
 from services import *
 from counts import *
-
-set.tcp_count=0
-set.udp_count=0
-set.packet_count=0
+from capture import *
+import argparse
 
 
+def main():
 
-## capture packets using wireshark and convert them to python dictionary objects
-class packetcap (threading.Thread):
-	def __init__(self, threadID, name):
-		threading.Thread.__init__(self)
-		self.threadID = threadID
-		self.name = name
-	def run(self):
-		cmd = "sudo tshark -V -l -T json"
-		p = subprocess.Popen(cmd, stdout=subprocess.PIPE, bufsize=1, shell=True, universal_newlines=True)
-		json_str = ""
-		for line  in p.stdout:
-			
-			if line.strip() == '[':
-				continue
-			if line.strip() in [',', ']']:
-				json_obj = json.loads(json_str.strip())
-				source_filter = json_obj['_source']['layers']
-				keyval=source_filter.items()
-				set.allkeyval={}
-				a=unwrap(keyval,{})
+    set.tcp_count = 0
+    set.udp_count = 0
+    set.packet_count = 0
 
-				
-				json_str = ""
-				
-				send_data(a)
+    parser = argparse.ArgumentParser(description = "Create time window statistics for pcap stream or file")
+    parser.add_argument("-s","--sourcefile", default=set.input_file_name,  help="provide a pcap input file name instead of reading live stream",action="store")
+    parser.add_argument("-i","--interface",  default=set.interface,        help="use an interface.  ["+ set.interface +"]",                     action="store")
+    parser.add_argument("-l","--howlong",    default=set.howlong,          help="number of seconds to run live mode. ["+str(set.howlong)+"]",   action="store", type=int)
+    parser.add_argument("-o","--outfile",    default=set.output_file_name, help="change the name of the output file ["+set.output_file_name+"]",action="store")
+    parser.add_argument("-w","--window",     default=set.time_window,      help="time window in msec ["+str(set.time_window)+"]",               action="store", type=int)
+    parser.add_argument("-t","--tshark",     default=set.tshark_program,   help="tshark program ["+set.tshark_program+"]",                      action="store")
+    args = parser.parse_args()
+    print("main:main Running with: ", vars(args))
+    
+    if (args.sourcefile):
+        set.input_file_name=args.sourcefile
+    if (args.interface):
+        set.interface = args.interface
+    if (args.howlong):
+        set.howlong = args.howlong
+    if (args.outfile):
+        set.output_file_name=args.outfile
+    if (args.window):
+        set.time_window=args.window
+    if (args.tshark):
+        set.tshark_program=args.tshark
 
-			else:
-				json_str += line
-		p.stdout.close()
-		p.wait()
+    datacollect = packetcap(1, 'packet capture data',1, set.tshark_program, set.input_file_name, set.interface, set.howlong)
+    datacollect.start()
 
-## separate out tcp,udp and arp traffic
+    dataprocess = packetanalyze(2, 'packet analyzing thread')
+    dataprocess.start()
 
-class packetanalyze (threading.Thread):
-	def __init__(self, threadID, name):
-		threading.Thread.__init__(self)
-		self.threadID = threadID
-		self.name = name
-	def run(self):
-		while True:
-			if set.sharedQ.empty()==False:
+    dataservices = services(3, 'service analyzing thread')
+    dataservices.start()
 
-				fortcp=set.sharedQ.get()
-				
-				Data=fortcp
-			
-				Tcp(Data)
+    timecounts = times(4, 'time the packets',1, set.output_file_name)
+    timecounts.start()
 
 
-			if set.notTCP.empty()==False:
-				
-				forudp=set.notTCP.get()
-				
-				Udp(forudp)
-
-
-			if set.notUDP.empty()==False:
-				forarp=set.notUDP.get()
-				Arp(forarp)
-
-
-
-## saves each dictionary object into a Queue
-
-def send_data(dictionary):
-	
-	set.packet_count =set.packet_count+1
-	# if set.packet_count < 50000:
-		
-	set.sharedQ.put(dictionary)
-
-
-
-
-## this function unwraps a multi level JSON object into a python dictionary with key value pairs
-
-
-def unwrap(keyval,temp):
-	
-	for key1,value1 in keyval:
-		if type(value1)== str :
-			
-			temp[key1]=value1
-
-			
-		else:
-			
-			unwrap(value1.items(),temp)
-
-					
-	return(temp)
-
-
-
-datacollect = packetcap (1, 'packet capture data')
-datacollect.start()
-
-dataprocess = packetanalyze (2,'packet analyzing thread')
-dataprocess.start()
-
-dataservices =  services (3 ,'service analyzing thread')
-dataservices.start()
-
-
-
-timecounts =  times (4 ,'time the packets')
-timecounts.start()
-
+if __name__ == "__main__":
+    main()
