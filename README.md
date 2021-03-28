@@ -80,9 +80,9 @@ You can find the original research paper on [researchgate](https://www.researchg
     sudo apt-get update
     sudo apt-get install python3.5.2
     ```
-1. The requirements.txt file includes the python packages needed for the software. **the requirements.txt file is obsolete** It will be trial and error until it is fixed.
+1. The requirements.txt file has been deleted because it was a hot mess after two 3 years of bit rot. the requirements.txt file was obsolete and full of versions with CVEs. Create a new one if you find you need it and submit a pull request.
     ```
-    pip3 install -r requirements.txt
+    IGNORE THIS LINE --> pip3 install -r requirements.txt
     ```
 1. `tshark` is installed, reachable and, on the PATH.  This python program for tshar with somehting like:
     ```
