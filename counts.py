@@ -38,10 +38,11 @@ class times (threading.Thread):
         self.current_time = 0
         self.counter = counter
         self.args = args
+        self.csv_file_path=args[0]
         
     def run(self):
         print("counts.times: run()")
-        with open(self.args[0], 'w') as csvfile:
+        with open(self.csv_file_path, 'w') as csvfile:
             fieldnames = ['tcp_frame_length', 'tcp_ip_length', 'tcp_length', 'udp_frame_length',
                           'udp_ip_length', 'udp_length', 'arp_frame_length', 'src_length', 'dst_length', 'num_tls',
                           'num_http', 'num_ftp', 'num_ssh', 'num_smtp', 'num_dhcp', 'num_dns', 'num_tcp',
