@@ -75,15 +75,12 @@ You can find the original research paper on [researchgate](https://www.researchg
     * The program is currently hard coded to run as sudo.
 1. You will need Wireshark/Tshark to run this software. Installation would vary depending on your OS.
     * Ubuntu: `sudo apt install tshark`
-1. This software is written in python3 so you will need to install python3. 
+1. This software is written in python3 so you will need to install python3. Most updated linux distributes already have it installed.
     ```
     sudo apt-get update
-    sudo apt-get install python3.5.2
+    sudo apt-get install python3.8.5
     ```
-1. The requirements.txt file has been deleted because it was a hot mess after two 3 years of bit rot. the requirements.txt file was obsolete and full of versions with CVEs. Create a new one if you find you need it and submit a pull request.
-    ```
-    IGNORE THIS LINE --> pip3 install -r requirements.txt
-    ```
+1. The requirements.txt file has been deleted because the current code base does not seem to require any additional libraries. Create a new one if you find you need it and submit a pull request.
 1. `tshark` is installed, reachable and, on the PATH.  This python program for tshar with somehting like:
     ```
     cmd = "sudo tshark -r /path/filename -V -T json"
@@ -111,6 +108,12 @@ You can find the original research paper on [researchgate](https://www.researchg
 1. In this mode you can load an existing PCAP and make a dataset in csv format. Specify the path to the input pcap with `--sourcefile <path>` The default is stored in `input_file_path` in `set.py`
 1. The software allows users to define a time window for each aggregation record. Specify the time in _msec_ with the `--window <size>` offering.. TThe default is stored in  `set.py` . The time is in milliseconds. 
 
+Notes:
+* Linux users can set the execute bit on main.py and run the main.py directly without the `python3` part.
+    ```
+    chmod +x main.py
+    ```
+    
 ### Capturing pcap files
 Try this
 ```
