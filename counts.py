@@ -53,7 +53,7 @@ class times (threading.Thread):
             csvfile.flush()
 
             pack_count = 0
-            time_count = 0
+            time_window_index = 0
             time_window_stop = 0
 
             while set.end_of_file == False:
@@ -68,65 +68,57 @@ class times (threading.Thread):
                     Data = Datalist[1]
                     Prot1 = Datalist[2]
                     services = Datalist[3]
-                    timec = 0
 
                     if pack_count == 1:
-
-                        time_count = time_count+1
-                        # time in message. this float lh=to the second rh is msec - onvert epoch time to msec
-                        full_time = Data['frame.time_epoch']
-                        full_time = int(float(full_time)*1000)
-                        timestamp = (full_time)
+                        # claim stop time was 0 which will cause a new window to be built
+                        time_window_index, time_window_stop, self.current_time = timecheck(Data, 0, time_window_index)
                         # starting time and current time are the message frame.time_epoch field
-                        set.starting = timestamp
-                        self.current_time = timestamp
-                        # first message in set so use time in message
-                        time_window_start_ceil = timestamp
-                        # initial stop time would be first message plus time window
-                        time_window_stop = time_window_start_ceil + set.time_window
+                        set.first_packet_time = self.current_time
 
-                    rec = timecheck(Data, time_window_stop, time_count, timec)
-                    self.current_time = rec[2]
-                    time_window_stop = rec[1]
-                    time_count = rec[0]
-                    timec = rec[0]
-                    calculate(ID, Data, Prot1, services, timec, writer)
-                    # should really only do this if row written out
+                    time_window_index, time_window_stop, self.current_time = timecheck(Data, time_window_stop, time_window_index)
+                    calculate(ID, Data, Prot1, services, time_window_index, writer)
+                    # should really only do this if row written out - doing here because other functions don't have csvfile
                     csvfile.flush()
             # it is possible that we will get this before all messages have flowed through
-            print("counts.times: notified of end of data. packet_count:"+str(set.packet_count)+" tcp_count:"+str(set.tcp_count)+" udp_count:"+str(set.udp_count))
+            print("counts.times: notified of end of data."
+                +" timed packet_count:"+str(pack_count)
+                +" capture packet_count:"+str(set.packet_count)
+                +" detector tcp_count:"+str(set.tcp_count)
+                +" detector udp_count:"+str(set.udp_count)
+                +" detector arp_count:"+str(set.arp_count))
             csvfile.close()
             import os
             os._exit(1)
 
 
 # calculate the new time offsets
-def timecheck(Data, time_window_stop, time_count, timec):
+def timecheck(Data, time_window_stop, time_window_index):
 
     # time in message. this float lh=to the second rh is msec - onvert epoch time to msec
     full_time = Data['frame.time_epoch']
     full_time = int(float(full_time)*1000)
     timestamp = (full_time)
 
+    #print ("timestamp:"+str(timestamp)+" stop:"+str(time_window_stop))
+
     if timestamp <= time_window_stop:
         # return the same time if still in the window
-        timec = time_count
+        pass
     else:
-        time_count = time_count+1
+        time_window_index = time_window_index+1
         time_window_start_ceil = timestamp
-
         time_window_stop = time_window_start_ceil + set.time_window
-        timec = time_count
+        #print("counts.timecheck count:"+str(time_window_index)+" stopTime:"+str(time_window_stop))
 
-    return(timec, time_window_stop, timestamp)
+    return(time_window_index, time_window_stop, timestamp)
 
 
-def calculate(ID, Data, Prot1, services, t, writer):
+def calculate(ID, Data, Prot1, services, time_window_index, writer):
 
     #print("calculate: ",ID, Prot1, services)
     # Adding or changing attributes
 
-    if t == cvar.out_record_count:
+    if time_window_index == cvar.out_record_count:
         #print("add to existing time block")
         cvar.tot_pack = cvar.tot_pack+1
 
