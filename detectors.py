@@ -204,10 +204,8 @@ def Udp(Data):
             status.append(Data['udp.srcport'])
             status.append(Data['udp.dstport'])
             status.append(1)
-            set.udp[int(ipaddress.IPv6Address(Data['ipv6.src'])) +
-                    int(ipaddress.IPv6Address(Data['ipv6.dst']))] = status
-            set.servicesQ.put([int(ipaddress.IPv6Address(
-                Data['ipv6.src']))+int(ipaddress.IPv6Address(Data['ipv6.dst'])), Data, "udp"])
+            set.udp[           generateIPv6SrcDstKey(Data['ipv6.src'],Data['ipv6.dst'])] = status
+            set.servicesQ.put([generateIPv6SrcDstKey(Data['ipv6.src'],Data['ipv6.dst']), Data, "udp"])
 
             set.udp_count = set.udp_count+1
         else:

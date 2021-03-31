@@ -24,6 +24,7 @@
 from queue import *
 import set
 
+# counters across all processing
 global packet_count
 packet_count = 0
 global tcp_count

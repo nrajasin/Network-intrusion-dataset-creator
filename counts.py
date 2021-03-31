@@ -94,7 +94,7 @@ class times (threading.Thread):
                     # should really only do this if row written out
                     csvfile.flush()
             # it is possible that we will get this before all messages have flowed through
-            print("counts.times: notified of end of file.  closing down")
+            print("counts.times: notified of end of data. packet_count:"+str(set.packet_count)+" tcp_count:"+str(set.tcp_count)+" udp_count:"+str(set.udp_count))
             csvfile.close()
             import os
             os._exit(1)
