@@ -131,23 +131,24 @@ def calculate(ID, Data, Prot1, services, t, writer):
         cvar.tot_pack = cvar.tot_pack+1
 
         if Prot1 == 'tcp':
-            cvar.tcp_frame_length = cvar.tcp_frame_length + \
-                int(Data['frame.len'])
-            cvar.tcp_ip_length = cvar.tcp_ip_length+int(Data['ip.len'])
-            cvar.tcp_length = cvar.tcp_length+int(Data['tcp.len'])
+            cvar.tcp_frame_length = cvar.tcp_frame_length + int(Data['frame.len'])
+            try: 
+                cvar.tcp_ip_length = cvar.tcp_ip_length + int(Data['ip.len'])
+            except KeyError:  # does not exist in ipv6
+                cvar.tcp_ip_length = cvar.tcp_ip_length + 0
+            cvar.tcp_length = cvar.tcp_length + int(Data['tcp.len'])
             get_services(services)
             cvar.tcp = cvar.tcp+1
             check_ID(ID)
             ports([Data['tcp.srcport'], Data['tcp.dstport']])
 
         elif Prot1 == 'udp':
-            cvar.udp_frame_length = cvar.udp_frame_length + \
-                int(Data['frame.len'])
+            cvar.udp_frame_length = cvar.udp_frame_length + int(Data['frame.len'])
             try:
-                cvar.udp_ip_length = cvar.udp_ip_length+int(Data['ip.len'])
-            except KeyError:
+                cvar.udp_ip_length = cvar.udp_ip_length + int(Data['ip.len'])
+            except KeyError: # does not exist in ipv6
                 cvar.udp_ip_length = cvar.udp_ip_length+0
-            cvar.udp_length = cvar.udp_length+int(Data['udp.length'])
+            cvar.udp_length = cvar.udp_length + int(Data['udp.length'])
             get_services(services)
             cvar.udp = cvar.udp+1
             check_ID(ID)

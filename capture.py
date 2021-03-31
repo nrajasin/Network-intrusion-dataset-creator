@@ -48,7 +48,7 @@ class packetcap (threading.Thread):
     def run(self):
         cmd = "sudo "+self.tshark_program+" -V -i -l -T ek"
         if (self.input_file_name is not None):
-            cmd = "sudo "+self.tshark_program+" -V -r " +self.input_file_name + " -T ek"
+            cmd = ""+self.tshark_program+" -V -r " +self.input_file_name + " -T ek"
         else:
             cmd = "sudo "+self.tshark_program+" -V -i " +self.interface+" -a duration:" + str(self.howlong) + " -l -T ek"
         print ("capture.packetcap: run(): Capturing with: ", cmd)

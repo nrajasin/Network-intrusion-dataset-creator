@@ -56,9 +56,30 @@ class packetanalyze (threading.Thread):
                 forarp = set.notUDPQ.get()
                 Arp(forarp)
 
-# pass in strings that are the ip addresses from the p;acket
+# pass in strings that are the ip addresses from the packet
 def generateSrcDstKey(src,dst):
     return int(ipaddress.ip_address(src))+int(ipaddress.ip_address(dst))
+
+# pass in strings that are the ip addresses from the packet
+def generateIPv6SrcDstKey(src,dst):
+    return int(ipaddress.IPv6Address(src))+int(ipaddress.IPv6Address(dst))
+
+# we mutate a parameter. oh the horror!
+def populateBucket(ListBucket, Data, pack_count, ipSrcKey, ipDstKey):
+    ListBucket.append(Data[ipSrcKey])
+    ListBucket.append(Data[ipDstKey])
+    ListBucket.append(Data['tcp.flags.res'])
+    ListBucket.append(Data['tcp.flags.ns'])
+    ListBucket.append(Data['tcp.flags.cwr'])
+    ListBucket.append(Data['tcp.flags.ecn'])
+    ListBucket.append(Data['tcp.flags.urg'])
+    ListBucket.append(Data['tcp.flags.ack'])
+    ListBucket.append(Data['tcp.flags.push'])
+    ListBucket.append(Data['tcp.flags.reset'])
+    ListBucket.append(Data['tcp.flags.syn'])
+    ListBucket.append(Data['tcp.flags.fin'])
+    ListBucket.append(pack_count)
+
 
 # Picks interested attributes from packets and saves them into a list
 def Tcp(Data):
@@ -76,44 +97,49 @@ def Tcp(Data):
             pack_count = temp[len(temp)-1]
             pack_count = pack_count+1
             # print(pack_count)
+            populateBucket(temp,Data,pack_count,'ip.src', 'ip.dst')
+
             set.servicesQ.put([ky, Data, "tcp"])
-
-            temp.append(Data['ip.src'])
-            temp.append(Data['ip.dst'])
-            temp.append(Data['tcp.flags.res'])
-            temp.append(Data['tcp.flags.ns'])
-            temp.append(Data['tcp.flags.cwr'])
-            temp.append(Data['tcp.flags.ecn'])
-            temp.append(Data['tcp.flags.urg'])
-            temp.append(Data['tcp.flags.ack'])
-            temp.append(Data['tcp.flags.push'])
-            temp.append(Data['tcp.flags.reset'])
-            temp.append(Data['tcp.flags.syn'])
-            temp.append(Data['tcp.flags.fin'])
-            temp.append(pack_count)
-
             set.tcp[ky] = temp
             set.tcp_count = set.tcp_count+1
         elif 'ip.src' in Data and 'tcp.flags.syn' in Data:
 
+            ky = generateSrcDstKey(Data['ip.src'], Data['ip.dst'])
             status = []
             pack_count = 1
+            populateBucket(status, Data, pack_count, 'ip.src', 'ip.dst')
 
-            status.append(Data['ip.src'])
-            status.append(Data['ip.dst'])
-            status.append(Data['tcp.flags.res'])
-            status.append(Data['tcp.flags.ns'])
-            status.append(Data['tcp.flags.cwr'])
-            status.append(Data['tcp.flags.ecn'])
-            status.append(Data['tcp.flags.urg'])
-            status.append(Data['tcp.flags.ack'])
-            status.append(Data['tcp.flags.push'])
-            status.append(Data['tcp.flags.reset'])
-            status.append(Data['tcp.flags.syn'])
-            status.append(Data['tcp.flags.fin'])
-            status.append(pack_count)
-            set.tcp[            generateSrcDstKey(Data['ip.src'], Data['ip.dst'])] = status
-            set.servicesQ.put([ generateSrcDstKey(Data['ip.src'], Data['ip.dst']), Data, "tcp"])
+            set.servicesQ.put([ ky, Data, "tcp"])
+            set.tcp[ky] = status
+            set.tcp_count = set.tcp_count+1
+        else:
+            set.notTCPQ.put(Data)
+    except KeyError:
+        if 'tcp.srcport' in Data and (generateIPv6SrcDstKey(Data['ipv6.src'],Data['ipv6.dst']) in set.tcp.keys() or generateIPv6SrcDstKey(Data['ipv6.dst'], Data['ipv6.src']) in set.tcp.keys()):
+
+            try:
+                ky = generateIPv6SrcDstKey(Data['ipv6.src'] ,Data['ipv6.dst'])
+                temp = set.tcp[ky]
+            except KeyError:
+                ky = generateIPv6SrcDstKey(Data['ipv6.dst'], Data['ipv6.src'])
+                temp = set.tcp[ky]
+            pack_count = temp[len(temp)-1]
+            pack_count = pack_count+1
+            # print(pack_count)
+            populateBucket(temp,Data,pack_count,'ipv6.src', 'ipv6.dst')
+
+            set.servicesQ.put([ky, Data, "tcp"])
+            set.tcp[ky] = temp
+            set.tcp_count = set.tcp_count+1
+        elif 'ipv6.src' in Data and 'tcp.flags.syn' in Data:
+
+            ky = generateIPv6SrcDstKey(Data['ipv6.src'], Data['ipv6.dst'])
+            status = []
+            pack_count = 1
+            populateBucket(status, Data, pack_count, 'ipv6.src', 'ipv6.dst')
+
+            set.servicesQ.put([ ky, Data, "tcp"])
+            set.tcp[ky] = status
             set.tcp_count = set.tcp_count+1
         else:
             set.notTCPQ.put(Data)
@@ -158,15 +184,13 @@ def Udp(Data):
 
     except KeyError:
 
-        if 'udp.srcport' in Data and (int(ipaddress.IPv6Address(Data['ipv6.src']))+int(ipaddress.IPv6Address(Data['ipv6.dst'])) in set.udp.keys() or int(ipaddress.IPv6Address(Data['ipv6.dst']))+int(ipaddress.IPv6Address(Data['ipv6.src'])) in set.udp.keys()):
+        if 'udp.srcport' in Data and (generateIPv6SrcDstKey(Data['ipv6.src'],Data['ipv6.dst']) in set.udp.keys() or generateIPv6SrcDstKey(Data['ipv6.dst'],Data['ipv6.src']) in set.udp.keys()):
 
             try:
-                ky = int(ipaddress.IPv6Address(
-                    Data['ipv6.src']))+int(ipaddress.IPv6Address(Data['ipv6.dst']))
+                ky = generateIPv6SrcDstKey(Data['ipv6.src'],Data['ipv6.dst'])
                 temp = set.udp[ky]
             except KeyError:
-                ky = int(ipaddress.IPv6Address(
-                    Data['ipv6.dst']))+int(ipaddress.IPv6Address(Data['ipv6.src']))
+                ky = generateIPv6SrcDstKey(Data['ipv6.dst'],Data['ipv6.src'])
                 temp = set.udp[ky]
 
             set.servicesQ.put([ky, Data, "udp"])
