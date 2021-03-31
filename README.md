@@ -108,14 +108,27 @@ You can find the original research paper on [researchgate](https://www.researchg
 1. In this mode you can load an existing PCAP and make a dataset in csv format. Specify the path to the input pcap with `--sourcefile <path>` The default is stored in `input_file_path` in `set.py`
 1. The software allows users to define a time window for each aggregation record. Specify the time in _msec_ with the `--window <size>` offering.. TThe default is stored in  `set.py` . The time is in milliseconds. 
 
-Notes:
+### Notes:
 * Linux users can set the execute bit on main.py and run the main.py directly without the `python3` part.
     ```
     chmod +x main.py
     ```
+
+### Sample reading from file
+reads from a pcap and writes to dataset.csv
+
+`python3 main.py --sourcefile Razi_15012021.pcap`
+
     
-### Capturing pcap files
+### Capturing pcap files with tshark
 Try this
 ```
 sudo tshark  -i eth0 -a duration:120 -w /tmp/foo.pcap -F pcap
 ```
+
+## Corner cases
+
+1. IPV6 traffic does not have a `ip.len` field.  This means that the `tcp_ip_length` value in the result set only includes ipv4 traffic.
+    * This is true for TCP and UDP
+1. When testing with a file, my sample froze eating one full core at 83 frames.  Ignore the number but know the app gets slower and slower probably because it keeps adding data to the globsl vars.
+    * test with ransomware samples from unavarra.es which came from other sites.
