@@ -65,8 +65,8 @@ global timed
 timed = Queue()
 
 # when we started
-global starting
-starting = 0
+global first_packet_time
+first_packet_time = 0
 
 # sliding window size
 global time_window

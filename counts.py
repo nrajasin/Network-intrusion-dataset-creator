@@ -60,7 +60,7 @@ class times (threading.Thread):
 
                 if not set.timesQ.empty():
 
-                    pack_count = pack_count+1
+                    pack_count +=1
                     Datalist = set.timesQ.get()
                     #print("processing data list: ", Datalist)
 
@@ -105,7 +105,7 @@ def timecheck(Data, time_window_stop, time_window_index):
         # return the same time if still in the window
         pass
     else:
-        time_window_index = time_window_index+1
+        time_window_index +=1
         time_window_start_ceil = timestamp
         time_window_stop = time_window_start_ceil + set.time_window
         #print("counts.timecheck count:"+str(time_window_index)+" stopTime:"+str(time_window_stop))
@@ -120,7 +120,7 @@ def calculate(ID, Data, Prot1, services, time_window_index, writer):
 
     if time_window_index == cvar.out_record_count:
         #print("add to existing time block")
-        cvar.tot_pack = cvar.tot_pack+1
+        cvar.tot_pack +=1
 
         if Prot1 == 'tcp':
             cvar.tcp_frame_length = cvar.tcp_frame_length + int(Data['frame.len'])
@@ -130,7 +130,7 @@ def calculate(ID, Data, Prot1, services, time_window_index, writer):
                 cvar.tcp_ip_length = cvar.tcp_ip_length + 0
             cvar.tcp_length = cvar.tcp_length + int(Data['tcp.len'])
             get_services(services)
-            cvar.tcp = cvar.tcp+1
+            cvar.tcp +=1
             check_ID(ID)
             ports([Data['tcp.srcport'], Data['tcp.dstport']])
 
@@ -142,14 +142,14 @@ def calculate(ID, Data, Prot1, services, time_window_index, writer):
                 cvar.udp_ip_length = cvar.udp_ip_length+0
             cvar.udp_length = cvar.udp_length + int(Data['udp.length'])
             get_services(services)
-            cvar.udp = cvar.udp+1
+            cvar.udp +=1
             check_ID(ID)
             ports([Data['udp.srcport'], Data['udp.dstport']])
 
         elif Prot1 == 'arp':
             cvar.arp_frame_length = cvar.arp_frame_length + \
                 int(Data['frame.len'])
-            cvar.arp = cvar.arp+1
+            cvar.arp +=1
             check_ID(ID)
 
     else:
@@ -218,7 +218,7 @@ def calculate(ID, Data, Prot1, services, time_window_index, writer):
         print("counts.calculate.calculate: Writing row: ", cvar.out_record_count)
         writer.writerow(cvar.localdat)
 
-        cvar.out_record_count = cvar.out_record_count+1
+        cvar.out_record_count +=1
 
         if Prot1 == 'tcp':
             cvar.tcp_frame_length = cvar.tcp_frame_length + \
@@ -227,7 +227,7 @@ def calculate(ID, Data, Prot1, services, time_window_index, writer):
             cvar.tcp_length = cvar.tcp_length+int(Data['tcp.len'])
             cvar.src_length = cvar.src_length+int(Data['tcp.len'])
             get_services(services)
-            cvar.tcp = cvar.tcp+1
+            cvar.tcp +=1
             check_ID(ID)
             ports([Data['tcp.srcport'], Data['tcp.dstport']])
 
@@ -240,14 +240,14 @@ def calculate(ID, Data, Prot1, services, time_window_index, writer):
                 cvar.udp_ip_length = cvar.udp_ip_length+0
             cvar.udp_length = cvar.udp_length+int(Data['udp.length'])
             get_services(services)
-            cvar.udp = cvar.udp+1
+            cvar.udp +=1
             check_ID(ID)
             ports([Data['udp.srcport'], Data['udp.dstport']])
 
         elif Prot1 == 'arp':
             cvar.arp_frame_length = cvar.arp_frame_length + \
                 int(Data['frame.len'])
-            cvar.arp = cvar.arp+1
+            cvar.arp +=1
             check_ID(ID)
 
         cvar.localdat = {}
@@ -257,19 +257,19 @@ def calculate(ID, Data, Prot1, services, time_window_index, writer):
 def get_services(slist):
 
     if 'tls' in slist:
-        cvar.tls = cvar.tls+1
+        cvar.tls +=1
     elif 'http' in slist:
-        cvar.http = cvar.http+1
+        cvar.http +=1
     elif 'ftp' in slist:
-        cvar.ftp = cvar.ftp+1
+        cvar.ftp +=1
     elif 'ssh' in slist:
-        cvar.ssh = cvar.ssh+1
+        cvar.ssh +=1
     elif 'dns' in slist:
-        cvar.dns = cvar.dns+1
+        cvar.dns +=1
     elif 'smtp' in slist:
-        cvar.smtp = cvar.smtp+1
+        cvar.smtp +=1
     elif 'dhcp' in slist:
-        cvar.dhcp = cvar.dhcp+1
+        cvar.dhcp +=1
 
 
 def check_ID(ID):

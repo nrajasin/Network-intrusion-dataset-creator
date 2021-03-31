@@ -41,7 +41,7 @@ class services (threading.Thread):
             if set.servicesQ.empty() == False:
 
                 Datalist = set.servicesQ.get()
-                service_count = service_count+1
+                service_count +=1
                 #print("services invoked "+str(service_count)+" times. Notified about ", Datalist[0])
                 ID = Datalist[0]
                 Data = Datalist[1]

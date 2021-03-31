@@ -95,13 +95,13 @@ def Tcp(Data):
                 ky = generateSrcDstKey(Data['ip.dst'], Data['ip.src'])
                 temp = set.tcp[ky]
             pack_count = temp[len(temp)-1]
-            pack_count = pack_count+1
+            pack_count +=1
             # print(pack_count)
             populateBucket(temp,Data,pack_count,'ip.src', 'ip.dst')
 
             set.servicesQ.put([ky, Data, "tcp"])
             set.tcp[ky] = temp
-            set.tcp_count = set.tcp_count+1
+            set.tcp_count +=1
         elif 'ip.src' in Data and 'tcp.flags.syn' in Data:
 
             ky = generateSrcDstKey(Data['ip.src'], Data['ip.dst'])
@@ -111,7 +111,7 @@ def Tcp(Data):
 
             set.servicesQ.put([ ky, Data, "tcp"])
             set.tcp[ky] = status
-            set.tcp_count = set.tcp_count+1
+            set.tcp_count +=1
         else:
             set.notTCPQ.put(Data)
     except KeyError:
@@ -124,13 +124,13 @@ def Tcp(Data):
                 ky = generateIPv6SrcDstKey(Data['ipv6.dst'], Data['ipv6.src'])
                 temp = set.tcp[ky]
             pack_count = temp[len(temp)-1]
-            pack_count = pack_count+1
+            pack_count +=1
             # print(pack_count)
             populateBucket(temp,Data,pack_count,'ipv6.src', 'ipv6.dst')
 
             set.servicesQ.put([ky, Data, "tcp"])
             set.tcp[ky] = temp
-            set.tcp_count = set.tcp_count+1
+            set.tcp_count +=1
         elif 'ipv6.src' in Data and 'tcp.flags.syn' in Data:
 
             ky = generateIPv6SrcDstKey(Data['ipv6.src'], Data['ipv6.dst'])
@@ -140,7 +140,7 @@ def Tcp(Data):
 
             set.servicesQ.put([ ky, Data, "tcp"])
             set.tcp[ky] = status
-            set.tcp_count = set.tcp_count+1
+            set.tcp_count +=1
         else:
             set.notTCPQ.put(Data)
 
@@ -163,7 +163,7 @@ def Udp(Data):
 
             set.servicesQ.put([ky, Data, "udp"])
 
-            set.udp_count = set.udp_count+1
+            set.udp_count +=1
 
         elif 'udp.srcport' in Data:
 
@@ -176,7 +176,7 @@ def Udp(Data):
             status.append(1)
             set.udp[           generateSrcDstKey(Data['ip.src'],Data['ip.dst'])] = status
             set.servicesQ.put([generateSrcDstKey(Data['ip.src'],Data['ip.dst']), Data, "udp"])
-            set.udp_count = set.udp_count+1
+            set.udp_count +=1
 
         else:
 
@@ -195,7 +195,7 @@ def Udp(Data):
 
             set.servicesQ.put([ky, Data, "udp"])
 
-            set.udp_count = set.udp_count+1
+            set.udp_count +=1
 
         elif 'udp.srcport' in Data:
             status = []
@@ -207,7 +207,7 @@ def Udp(Data):
             set.udp[           generateIPv6SrcDstKey(Data['ipv6.src'],Data['ipv6.dst'])] = status
             set.servicesQ.put([generateIPv6SrcDstKey(Data['ipv6.src'],Data['ipv6.dst']), Data, "udp"])
 
-            set.udp_count = set.udp_count+1
+            set.udp_count +=1
         else:
             set.notUDPQ.put(Data)
 
@@ -226,7 +226,7 @@ def Arp(Data):
                 temp = set.arp[ky]
 
             pack_count = temp[len(temp)-1]
-            pack_count = pack_count+1
+            pack_count +=1
 
             temp.append(Data['arp.src.proto_ipv4'])
             temp.append(Data['arp.dst.proto_ipv4'])
@@ -235,7 +235,7 @@ def Arp(Data):
             temp.append(pack_count)
             set.servicesQ.put([ky, Data, "arp"])
 
-            set.arp_count = set.arp_count+1
+            set.arp_count +=1
         elif 'arp.src.proto_ipv4' in Data:
 
             # print('Tcp connection initiated')
@@ -252,7 +252,7 @@ def Arp(Data):
             status.append(pack_count)
             set.arp[           generateSrcDstKey(Data['arp.src.proto_ipv4'],Data['arp.dst.proto_ipv4'])] = status
             set.servicesQ.put([generateSrcDstKey(Data['arp.src.proto_ipv4'],Data['arp.dst.proto_ipv4']), Data, "arp"])
-            set.arp_count = set.arp_count+1
+            set.arp_count +=1
         else:
             set.notARPQ.put(Data)
 

@@ -85,7 +85,7 @@ class packetcap (threading.Thread):
 def send_data(dictionary):
     #print("sending dictionary size: ", len(dictionary))
     #print("sending dictionary : ", dictionary)
-    set.packet_count = set.packet_count+1
+    set.packet_count +=1
     set.sharedQ.put(dictionary)
 
 # this function unwraps a multi level JSON object into a python dictionary with key value pairs
