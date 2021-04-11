@@ -120,9 +120,10 @@ Try this
 sudo tshark  -i eth0 -a duration:120 -w /tmp/foo.pcap -F pcap
 ```
 
-## Corner cases
+## Corner cases and concerns
 
 1. IPV6 traffic does not have a `ip.len` field.  This means that the `tcp_ip_length` value in the result set only includes ipv4 traffic.
     * This is true for TCP and UDP
 1. When testing with a file, my sample froze eating one full core at 83 frames.  Ignore the number but know the app gets slower and slower probably because it keeps adding data to the globsl vars.
     * test with ransomware samples from unavarra.es which came from other sites.
+1. This application has multiple concurrent threads but does not execute as parallel operations due to limitations in Python and the GIL.
