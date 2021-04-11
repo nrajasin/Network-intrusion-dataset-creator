@@ -22,14 +22,8 @@
 
 import ipaddress
 import set
-from services import *
-
 import threading
-import subprocess
-import json
 from queue import *
-from detectors import *
-from counts import *
 
 # separate out tcp,udp and arp traffic
 
@@ -79,13 +73,12 @@ def populateBucket(ListBucket, Data, pack_count, ipSrcKey, ipDstKey):
 
 # Picks interested attributes from packets and saves them into a list
 def Tcp(Data):
-    # print("TCP\n",Data,"\n")
-
     success = False
+    if 'ip.proto' in Data and (Data['ip.proto'] != '6'):
+        return success
 
     try:
         if 'tcp.srcport' in Data and (generateSrcDstKey(Data['ip.src'],Data['ip.dst']) in set.tcp.keys() or generateSrcDstKey(Data['ip.dst'], Data['ip.src']) in set.tcp.keys()):
-
             try:
                 ky = generateSrcDstKey(Data['ip.src'] ,Data['ip.dst'])
                 temp = set.tcp[ky]
@@ -152,8 +145,10 @@ def Tcp(Data):
 
 
 def Udp(Data):
-
     success = False
+    if 'ip.proto' in Data and (Data['ip.proto'] != '17'):
+        return success
+
     try:
 
         if 'udp.srcport' in Data and (generateSrcDstKey(Data['ip.src'],Data['ip.dst']) in set.udp.keys() or generateSrcDstKey(Data['ip.dst'],Data['ip.src']) in set.udp.keys()):
@@ -220,7 +215,6 @@ def Arp(Data):
     try:
 
         if 'arp.src.proto_ipv4' in Data and ( generateSrcDstKey(Data['arp.src.proto_ipv4'],Data['arp.dst.proto_ipv4']) in set.arp.keys() or generateSrcDstKey(Data['arp.dst.proto_ipv4'],Data['arp.src.proto_ipv4']) in set.arp.keys()):
-
             try:
                 ky = generateSrcDstKey(Data['arp.src.proto_ipv4'],Data['arp.dst.proto_ipv4'])
                 temp = set.arp[ky]
