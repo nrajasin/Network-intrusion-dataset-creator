@@ -161,39 +161,7 @@ def calculate(ID, Data, Prot1, services, time_window_index, writer):
         #print("in new time block so aggregating and creating new block: ")
         # save the attributes to a dictionary
 
-        cvar.localdat['tcp_frame_length'] = cvar.tcp_frame_length
-        cvar.localdat['tcp_ip_length'] = cvar.tcp_ip_length
-        cvar.localdat['tcp_length'] = cvar.tcp_length
-
-        cvar.localdat['udp_frame_length'] = cvar.udp_frame_length
-        cvar.localdat['udp_ip_length'] = cvar.udp_ip_length
-        cvar.localdat['udp_length'] = cvar.udp_length
-
-        cvar.localdat['arp_frame_length'] = cvar.arp_frame_length
-
-        cvar.localdat['src_length'] = cvar.udp_ip_length
-        cvar.localdat['dst_length'] = cvar.udp_length
-
-        cvar.localdat['num_tls'] = cvar.tls
-        cvar.localdat['num_http'] = cvar.http
-        cvar.localdat['num_ftp'] = cvar.ftp
-        cvar.localdat['num_ssh'] = cvar.ssh
-        cvar.localdat['num_smtp'] = cvar.smtp
-        cvar.localdat['num_dhcp'] = cvar.dhcp
-        cvar.localdat['num_dns'] = cvar.dns
-
-        cvar.localdat['num_tcp'] = cvar.tcp
-        cvar.localdat['num_udp'] = cvar.udp
-        cvar.localdat['num_arp'] = cvar.arp
-        cvar.localdat['num_igmp'] = cvar.igmp
-        cvar.localdat['connection_pairs'] = len(cvar.IDs)
-        cvar.localdat['num_ports'] = len(cvar.ports)
-        cvar.localdat['num_packets'] = cvar.tot_pack
-
-        #print("counts.calculate.calculate: Writing row: ", cvar.out_record_count, "data:", cvar.localdat)
-        print("counts.calculate.calculate: Writing row: ", cvar.out_record_count, "packetCount:",cvar.localdat['num_packets'])
-        writer.writerow(cvar.localdat)
-
+        writewindow(writer,cvar)
 
         # clear variables for the next time window
 
@@ -256,7 +224,6 @@ def calculate(ID, Data, Prot1, services, time_window_index, writer):
             cvar.arp +=1
             check_ID(ID)
 
-        cvar.localdat = {}
     #print("set.Dataset: ", set.Dataset)
 
 
@@ -288,3 +255,40 @@ def ports(port):
 
         if not p in cvar.ports:
             cvar.ports.append(p)
+
+# Write one time window as a row to the CSV file
+def writewindow(writer, rowdata):
+    print("counts.times.calculate: Writing row: ", rowdata.out_record_count, "packetCount:", rowdata.tot_pack)
+
+    csvrowdata = {}
+    csvrowdata['tcp_frame_length'] = rowdata.tcp_frame_length
+    csvrowdata['tcp_ip_length'] = rowdata.tcp_ip_length
+    csvrowdata['tcp_length'] = rowdata.tcp_length
+
+    csvrowdata['udp_frame_length'] = rowdata.udp_frame_length
+    csvrowdata['udp_ip_length'] = rowdata.udp_ip_length
+    csvrowdata['udp_length'] = rowdata.udp_length
+
+    csvrowdata['arp_frame_length'] = rowdata.arp_frame_length
+
+    csvrowdata['src_length'] = rowdata.udp_ip_length
+    csvrowdata['dst_length'] = rowdata.udp_length
+
+    csvrowdata['num_tls'] = rowdata.tls
+    csvrowdata['num_http'] = rowdata.http
+    csvrowdata['num_ftp'] = rowdata.ftp
+    csvrowdata['num_ssh'] = rowdata.ssh
+    csvrowdata['num_smtp'] = rowdata.smtp
+    csvrowdata['num_dhcp'] = rowdata.dhcp
+    csvrowdata['num_dns'] = rowdata.dns
+
+    csvrowdata['num_tcp'] = rowdata.tcp
+    csvrowdata['num_udp'] = rowdata.udp
+    csvrowdata['num_arp'] = rowdata.arp
+    csvrowdata['num_igmp'] = rowdata.igmp
+    csvrowdata['connection_pairs'] = len(rowdata.IDs)
+    csvrowdata['num_ports'] = len(rowdata.ports)
+    csvrowdata['num_packets'] = rowdata.tot_pack
+
+    writer.writerow(csvrowdata)
+    csvrowdata = {}

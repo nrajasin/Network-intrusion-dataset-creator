@@ -33,7 +33,7 @@ from counts import *
 
 # capture packets using wireshark and convert them to python dictionary objects
 # args input-file-name, ethernet-interface, how-long
-class packetcap (threading.Thread):
+class packetcapture (threading.Thread):
     def __init__(self, threadID, name, counter, *args):
         threading.Thread.__init__(self)
         self.threadID = threadID
@@ -51,7 +51,7 @@ class packetcap (threading.Thread):
             cmd = ""+self.tshark_program+" -V -r " +self.input_file_name + " -T ek"
         else:
             cmd = "sudo "+self.tshark_program+" -V -i " +self.interface+" -a duration:" + str(self.howlong) + " -l -T ek"
-        print ("capture.packetcap: run(): Capturing with: ", cmd)
+        print ("capture.packetcapture: run(): Capturing with: ", cmd)
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                              bufsize=1, shell=True, universal_newlines=True)
         json_str = ""
@@ -60,20 +60,20 @@ class packetcap (threading.Thread):
 
             line = p.stdout.readline()
             if "layers" in line:
-                #print("capture.packetcap: working with line ", line)
+                #print("capture.packetcapture: working with line ", line)
                 json_obj = json.loads(line.strip())
                 source_filter = json_obj['layers']
                 keyval = source_filter.items()
-                #print("capture.packetcap: working with dict ", line)
+                #print("capture.packetcapture: working with dict ", line)
                 a = unwrap(keyval, {})
-                #print("capture.packetcap: working with packet ", a)
+                #print("capture.packetcapture: working with packet ", a)
                 send_data(a)
             else:
-                # print("capture.packetcap: ignoring: ",line)
+                # print("capture.packetcapture: ignoring: ",line)
                 pass
             if (not line and p.poll() is not None):
                 # possible could delay here to let processing complete
-                print("capture.packetcap: We're done - no input and tshark exited")
+                print("capture.packetcapture: We're done - no input and tshark exited")
                 set.end_of_file=True
                 break
         p.stdout.close()

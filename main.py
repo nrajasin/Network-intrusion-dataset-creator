@@ -58,7 +58,7 @@ def main():
     if (args.tshark):
         set.tshark_program=args.tshark
 
-    datacollect = packetcap(1, 'packet capture data',1, set.tshark_program, set.input_file_name, set.interface, set.howlong)
+    datacollect = packetcapture(1, 'packet capture data',1, set.tshark_program, set.input_file_name, set.interface, set.howlong)
     datacollect.start()
 
     dataprocess = packetanalyze(2, 'packet analyzing thread')
