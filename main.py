@@ -64,10 +64,10 @@ def main():
     dataprocess = packetanalyze(2, 'packet analyzing thread')
     dataprocess.start()
 
-    dataservices = services(3, 'service analyzing thread')
+    dataservices = serviceidentify(3, 'service analyzing thread')
     dataservices.start()
 
-    timecounts = times(4, 'time the packets',1, set.output_file_name)
+    timecounts = timesandcounts(4, 'time the packets',1, set.output_file_name)
     timecounts.start()
 
 

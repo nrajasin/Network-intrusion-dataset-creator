@@ -266,7 +266,8 @@ def Arp(Data):
 
     return success
 
-# only doing Igmp row counts until someone writes code here
+# only doing IGMP row counts until someone writes code here
+# ipv6 not tested
 def Igmp(Data):
     success = False
 

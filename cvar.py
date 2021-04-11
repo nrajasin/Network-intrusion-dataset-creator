@@ -23,8 +23,6 @@
 
 global out_record_count
 out_record_count = 1
-global localdat
-localdat = {}
 
 
 global tcp_frame_length

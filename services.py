@@ -20,14 +20,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-
 import threading
 import set
 
-
 # check the traffic for different services in the traffic suhc as tls,http,smtp
-
-class services (threading.Thread):
+class serviceidentify (threading.Thread):
     def __init__(self, threadID, name):
         threading.Thread.__init__(self)
         self.threadID = threadID

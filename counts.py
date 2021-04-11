@@ -30,7 +30,7 @@ import csv
 # Creates the window counts and writes them to the CSV
 # Divide the data into time windows so that you can get average information for a given time
 
-class times (threading.Thread):
+class timesandcounts (threading.Thread):
     def __init__(self, threadID, name, counter, *args):
         threading.Thread.__init__(self)
         self.threadID = threadID
@@ -258,7 +258,7 @@ def ports(port):
 
 # Write one time window as a row to the CSV file
 def writewindow(writer, rowdata):
-    print("counts.times.calculate: Writing row: ", rowdata.out_record_count, "packetCount:", rowdata.tot_pack)
+    print("counts.times.calculate: Writing window: ", rowdata.out_record_count, "packetCount:", rowdata.tot_pack)
 
     csvrowdata = {}
     csvrowdata['tcp_frame_length'] = rowdata.tcp_frame_length
