@@ -100,6 +100,7 @@ def unwrap(keyval, temp):
             temp[key1
                  .replace("tcp_tcp_", "tcp.")
                  .replace("udp_udp_", "udp.")
+                 .replace("igmp_igmp", "igmp.")
                  .replace("ip_ip_", "ip.")
                  .replace("ipv6_ipv6_","ipv6.")
                  .replace("frame_frame_", "frame.")

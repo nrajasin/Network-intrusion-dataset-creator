@@ -24,7 +24,7 @@
 from queue import *
 import set
 
-# counters across all processing
+# counters across all processing across all windows
 global packet_count
 packet_count = 0
 global tcp_count
@@ -33,18 +33,12 @@ global udp_count
 udp_count = 0
 global arp_count
 arp_count = 0
+global igmp_count
+igmp_count = 0
 
+# Should probably be called somehting like packetQ
 global sharedQ
 sharedQ = Queue()
-
-global notTCPQ
-notTCPQ = Queue()
-
-global notUDPQ
-notUDPQ = Queue()
-
-global notARPQ
-notARPQ = Queue()
 
 global tcp
 tcp = {}
@@ -60,9 +54,6 @@ servicesQ = Queue()
 
 global timesQ
 timesQ = Queue()
-
-global timed
-timed = Queue()
 
 # when we started
 global first_packet_time

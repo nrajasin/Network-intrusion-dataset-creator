@@ -50,7 +50,7 @@ src_length = 0
 global dst_length
 dst_length = 0
 
-
+# TCP / UDP service counts for an individual window
 global tls
 tls = 0
 global http
@@ -66,12 +66,15 @@ smtp = 0
 global dhcp
 dhcp = 0
 
+# protocol counts for an individual window
 global tcp
 tcp = 0
 global udp
 udp = 0
 global arp
 arp = 0
+global igmp
+igmp = 0
 
 global IDs
 IDs = []

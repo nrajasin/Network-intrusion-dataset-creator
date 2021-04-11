@@ -44,17 +44,14 @@ class packetanalyze (threading.Thread):
         print("detectors.packetanalyze: run()")
         while True:
             if set.sharedQ.empty() == False:
-                fortcp = set.sharedQ.get()
-                Data = fortcp
-                Tcp(Data)
+                packetUnderExamination = set.sharedQ.get()
+                if Tcp(packetUnderExamination) == False: 
+                    if Udp(packetUnderExamination) == False:
+                        if Arp(packetUnderExamination) == False:
+                            if Igmp(packetUnderExamination) == False:
+                                print("Error was not TCP, UDP, ARP, IGMP proto type:",packetUnderExamination['ip.proto'])
+                                print(packetUnderExamination)
 
-            if set.notTCPQ.empty() == False:
-                forudp = set.notTCPQ.get()
-                Udp(forudp)
-
-            if set.notUDPQ.empty() == False:
-                forarp = set.notUDPQ.get()
-                Arp(forarp)
 
 # pass in strings that are the ip addresses from the packet
 def generateSrcDstKey(src,dst):
@@ -80,10 +77,11 @@ def populateBucket(ListBucket, Data, pack_count, ipSrcKey, ipDstKey):
     ListBucket.append(Data['tcp.flags.fin'])
     ListBucket.append(pack_count)
 
-
 # Picks interested attributes from packets and saves them into a list
 def Tcp(Data):
     # print("TCP\n",Data,"\n")
+
+    success = False
 
     try:
         if 'tcp.srcport' in Data and (generateSrcDstKey(Data['ip.src'],Data['ip.dst']) in set.tcp.keys() or generateSrcDstKey(Data['ip.dst'], Data['ip.src']) in set.tcp.keys()):
@@ -102,6 +100,7 @@ def Tcp(Data):
             set.servicesQ.put([ky, Data, "tcp"])
             set.tcp[ky] = temp
             set.tcp_count +=1
+            success=True
         elif 'ip.src' in Data and 'tcp.flags.syn' in Data:
 
             ky = generateSrcDstKey(Data['ip.src'], Data['ip.dst'])
@@ -112,8 +111,9 @@ def Tcp(Data):
             set.servicesQ.put([ ky, Data, "tcp"])
             set.tcp[ky] = status
             set.tcp_count +=1
+            success=True
         else:
-            set.notTCPQ.put(Data)
+            success=False
     except KeyError:
         if 'tcp.srcport' in Data and (generateIPv6SrcDstKey(Data['ipv6.src'],Data['ipv6.dst']) in set.tcp.keys() or generateIPv6SrcDstKey(Data['ipv6.dst'], Data['ipv6.src']) in set.tcp.keys()):
 
@@ -131,6 +131,7 @@ def Tcp(Data):
             set.servicesQ.put([ky, Data, "tcp"])
             set.tcp[ky] = temp
             set.tcp_count +=1
+            success=True
         elif 'ipv6.src' in Data and 'tcp.flags.syn' in Data:
 
             ky = generateIPv6SrcDstKey(Data['ipv6.src'], Data['ipv6.dst'])
@@ -141,15 +142,18 @@ def Tcp(Data):
             set.servicesQ.put([ ky, Data, "tcp"])
             set.tcp[ky] = status
             set.tcp_count +=1
+            success=True
         else:
-            set.notTCPQ.put(Data)
+            success=False
 
     except AttributeError:
         print(Data)
+    return success
 
 
 def Udp(Data):
 
+    success = False
     try:
 
         if 'udp.srcport' in Data and (generateSrcDstKey(Data['ip.src'],Data['ip.dst']) in set.udp.keys() or generateSrcDstKey(Data['ip.dst'],Data['ip.src']) in set.udp.keys()):
@@ -164,7 +168,7 @@ def Udp(Data):
             set.servicesQ.put([ky, Data, "udp"])
 
             set.udp_count +=1
-
+            success = True
         elif 'udp.srcport' in Data:
 
             status = []
@@ -177,11 +181,9 @@ def Udp(Data):
             set.udp[           generateSrcDstKey(Data['ip.src'],Data['ip.dst'])] = status
             set.servicesQ.put([generateSrcDstKey(Data['ip.src'],Data['ip.dst']), Data, "udp"])
             set.udp_count +=1
-
+            success = True
         else:
-
-            set.notUDPQ.put(Data)
-
+            success = False
     except KeyError:
 
         if 'udp.srcport' in Data and (generateIPv6SrcDstKey(Data['ipv6.src'],Data['ipv6.dst']) in set.udp.keys() or generateIPv6SrcDstKey(Data['ipv6.dst'],Data['ipv6.src']) in set.udp.keys()):
@@ -194,9 +196,8 @@ def Udp(Data):
                 temp = set.udp[ky]
 
             set.servicesQ.put([ky, Data, "udp"])
-
             set.udp_count +=1
-
+            success = True
         elif 'udp.srcport' in Data:
             status = []
             status.append(Data['ipv6.src'])
@@ -208,12 +209,14 @@ def Udp(Data):
             set.servicesQ.put([generateIPv6SrcDstKey(Data['ipv6.src'],Data['ipv6.dst']), Data, "udp"])
 
             set.udp_count +=1
+            success = True
         else:
-            set.notUDPQ.put(Data)
-
+            success = False
+    return success
 
 def Arp(Data):
 
+    success = False
     try:
 
         if 'arp.src.proto_ipv4' in Data and ( generateSrcDstKey(Data['arp.src.proto_ipv4'],Data['arp.dst.proto_ipv4']) in set.arp.keys() or generateSrcDstKey(Data['arp.dst.proto_ipv4'],Data['arp.src.proto_ipv4']) in set.arp.keys()):
@@ -234,8 +237,8 @@ def Arp(Data):
             temp.append(Data['arp.dst.hw_mac'])
             temp.append(pack_count)
             set.servicesQ.put([ky, Data, "arp"])
-
             set.arp_count +=1
+            success=True
         elif 'arp.src.proto_ipv4' in Data:
 
             # print('Tcp connection initiated')
@@ -253,8 +256,35 @@ def Arp(Data):
             set.arp[           generateSrcDstKey(Data['arp.src.proto_ipv4'],Data['arp.dst.proto_ipv4'])] = status
             set.servicesQ.put([generateSrcDstKey(Data['arp.src.proto_ipv4'],Data['arp.dst.proto_ipv4']), Data, "arp"])
             set.arp_count +=1
+            success=True
         else:
-            set.notARPQ.put(Data)
+            success = False
 
     except AttributeError:
         print(Data)
+        success=False
+
+    return success
+
+# only doing Igmp row counts until someone writes code here
+def Igmp(Data):
+    success = False
+
+    try: 
+        if 'ip.proto' in Data and (Data['ip.proto'] == '2') and 'ip.src' in Data and 'ip.dst' in Data:
+            ky = generateSrcDstKey(Data['ip.src'], Data['ip.dst'])
+            # I don't know anything about IGMP so just set the pack count to 1 all the time
+            set.igmp_count +=1
+            set.servicesQ.put([ ky, Data, "igmp"])
+            success = True
+        if 'ip.proto' in Data and (Data['ip.proto'] == '2') and 'ipv6.src' in Data and 'ipv6.dst' in Data:
+            ky = generateIPv6SrcDstKey(Data['ipv6.src'],Data['ipv6.dst'])
+            # I don't know anything about IGMP so just set the pack count to 1 all the time
+            set.igmp_count +=1
+            set.servicesQ.put([ ky, Data, "igmp"])
+            success = True
+    except AttributeError:
+        print(Data)
+        success=False
+    return success
+

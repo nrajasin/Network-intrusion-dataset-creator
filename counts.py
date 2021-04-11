@@ -27,7 +27,7 @@ import math
 import cvar
 import csv
 
-
+# Creates the window counts and writes them to the CSV
 # Divide the data into time windows so that you can get average information for a given time
 
 class times (threading.Thread):
@@ -46,7 +46,7 @@ class times (threading.Thread):
             fieldnames = ['tcp_frame_length', 'tcp_ip_length', 'tcp_length', 'udp_frame_length',
                           'udp_ip_length', 'udp_length', 'arp_frame_length', 'src_length', 'dst_length', 'num_tls',
                           'num_http', 'num_ftp', 'num_ssh', 'num_smtp', 'num_dhcp', 'num_dns', 'num_tcp',
-                          'num_udp', 'num_arp', 'connection_pairs', 'num_ports', 'num_packets']
+                          'num_udp', 'num_arp', 'num_igmp', 'connection_pairs', 'num_ports', 'num_packets']
 
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
@@ -80,12 +80,14 @@ class times (threading.Thread):
                     # should really only do this if row written out - doing here because other functions don't have csvfile
                     csvfile.flush()
             # it is possible that we will get this before all messages have flowed through
-            print("counts.times: notified of end of data."
+            print("counts.times: notified of end of data. dataset statistics"
                 +" timed packet_count:"+str(pack_count)
                 +" capture packet_count:"+str(set.packet_count)
                 +" detector tcp_count:"+str(set.tcp_count)
                 +" detector udp_count:"+str(set.udp_count)
-                +" detector arp_count:"+str(set.arp_count))
+                +" detector arp_count:"+str(set.arp_count)
+                +" detector igmp:"+str(set.igmp_count)
+                )
             csvfile.close()
             import os
             os._exit(1)
@@ -151,6 +153,9 @@ def calculate(ID, Data, Prot1, services, time_window_index, writer):
                 int(Data['frame.len'])
             cvar.arp +=1
             check_ID(ID)
+        elif Prot1 == 'igmp':
+            # TODO become more clever about igmp if needed
+            cvar.igmp += 1
 
     else:
         #print("in new time block so aggregating and creating new block: ")
@@ -180,17 +185,22 @@ def calculate(ID, Data, Prot1, services, time_window_index, writer):
         cvar.localdat['num_tcp'] = cvar.tcp
         cvar.localdat['num_udp'] = cvar.udp
         cvar.localdat['num_arp'] = cvar.arp
+        cvar.localdat['num_igmp'] = cvar.igmp
         cvar.localdat['connection_pairs'] = len(cvar.IDs)
         cvar.localdat['num_ports'] = len(cvar.ports)
         cvar.localdat['num_packets'] = cvar.tot_pack
 
-        # add the ips
+        #print("counts.calculate.calculate: Writing row: ", cvar.out_record_count, "data:", cvar.localdat)
+        print("counts.calculate.calculate: Writing row: ", cvar.out_record_count, "packetCount:",cvar.localdat['num_packets'])
+        writer.writerow(cvar.localdat)
+
 
         # clear variables for the next time window
 
         cvar.tcp = 0
         cvar.udp = 0
         cvar.arp = 0
+        cvar.igmp = 0
 
         cvar.tls = 0
         cvar.http = 0
@@ -213,10 +223,6 @@ def calculate(ID, Data, Prot1, services, time_window_index, writer):
         cvar.udp_length = 0
 
         cvar.arp_frame_length = 0
-
-        #print("counts.calculate.calculate: Writing row: ", cvar.out_record_count, "data:", cvar.localdat)
-        print("counts.calculate.calculate: Writing row: ", cvar.out_record_count)
-        writer.writerow(cvar.localdat)
 
         cvar.out_record_count +=1
 
