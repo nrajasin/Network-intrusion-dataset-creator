@@ -21,9 +21,11 @@
 # SOFTWARE.
 
 
+global window_end_time
+window_end_time = 0
+
 global out_record_count
 out_record_count = 1
-
 
 global tcp_frame_length
 tcp_frame_length = 0
