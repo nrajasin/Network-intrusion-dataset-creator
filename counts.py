@@ -23,6 +23,7 @@
 
 import threading
 import set
+import queues
 import math
 import cvar
 import csv
@@ -45,10 +46,13 @@ class timesandcounts (threading.Thread):
     def run(self):
         print("counts.times: run()")
         with open(self.csv_file_path, 'w') as csvfile:
-            fieldnames = ['tcp_frame_length', 'tcp_ip_length', 'tcp_length', 'udp_frame_length',
-                          'udp_ip_length', 'udp_length', 'arp_frame_length', 'src_length', 'dst_length', 'num_tls',
-                          'num_http', 'num_ftp', 'num_ssh', 'num_smtp', 'num_dhcp', 'num_dns', 'num_tcp',
-                          'num_udp', 'num_arp', 'num_igmp', 'connection_pairs', 'num_ports', 'num_packets', 'window_end_time']
+            fieldnames = ['tcp_frame_length', 'tcp_ip_length', 'tcp_length', 
+                          'udp_frame_length', 'udp_ip_length', 'udp_length', 
+                          'arp_frame_length', 
+                          'src_length', 'dst_length', 
+                          'num_tls', 'num_http', 'num_ftp', 'num_ssh', 'num_smtp', 'num_dhcp', 'num_dns', 'num_nbns', 'num_smb',
+                          'num_tcp', 'num_udp', 'num_arp', 'num_igmp', 
+                          'connection_pairs', 'num_ports', 'num_packets', 'window_end_time']
 
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
@@ -58,12 +62,14 @@ class timesandcounts (threading.Thread):
             time_window_index = 0
             time_window_stop = 0
 
-            while set.end_of_file == False:
+            while True:
 
-                if not set.timesQ.empty():
+                if not queues.timesQ.empty():
 
                     pack_count +=1
-                    Datalist = set.timesQ.get()
+                    Datalist = queues.timesQ.get()
+                    if not Datalist: 
+                        break
                     #print("processing data list: ", Datalist)
 
                     ID = Datalist[0]
@@ -73,24 +79,16 @@ class timesandcounts (threading.Thread):
 
                     if pack_count == 1:
                         # claim stop time was 0 which will cause a new window to be built
+                        # starting time and current time are the message frame.time_epoch field
                         time_window_index, time_window_stop, self.current_time = timecheck(Data, 0, time_window_index)
                         cvar.window_end_time = time_window_stop
-                        # starting time and current time are the message frame.time_epoch field
-                        set.first_packet_time = self.current_time
 
                     time_window_index, time_window_stop, self.current_time = timecheck(Data, time_window_stop, time_window_index)
                     calculate(ID, Data, Prot1, services, time_window_index, time_window_stop, writer)
                     # should really only do this if row written out - doing here because other functions don't have csvfile
                     csvfile.flush()
             # it is possible that we will get this before all messages have flowed through
-            print("counts.times: notified of end of data. dataset statistics"
-                +" timed packet_count:"+str(pack_count)
-                +" capture packet_count:"+str(set.packet_count)
-                +" detector tcp_count:"+str(set.tcp_count)
-                +" detector udp_count:"+str(set.udp_count)
-                +" detector arp_count:"+str(set.arp_count)
-                +" detector igmp:"+str(set.igmp_count)
-                )
+            print("counts.times: notified of end of data. dataset statistics timed packet_count:"+str(pack_count))
             csvfile.close()
             import os
             os._exit(1)
@@ -183,6 +181,10 @@ def get_services(slist):
         cvar.smtp +=1
     elif 'dhcp' in slist:
         cvar.dhcp +=1
+    elif 'nbns' in slist:
+        cvar.nbns +=1
+    elif 'smb' in slist:
+        cvar.smb +=1
 
 
 def check_ID(ID):
@@ -222,6 +224,8 @@ def writewindow(writer, rowdata):
     csvrowdata['num_smtp'] = rowdata.smtp
     csvrowdata['num_dhcp'] = rowdata.dhcp
     csvrowdata['num_dns'] = rowdata.dns
+    csvrowdata['num_nbns'] = rowdata.nbns
+    csvrowdata['num_smb'] = rowdata.smb
 
     csvrowdata['num_tcp'] = rowdata.tcp
     csvrowdata['num_udp'] = rowdata.udp
@@ -252,6 +256,8 @@ def resetwindow(time_window_end):
     cvar.dns = 0
     cvar.smtp = 0
     cvar.dhcp = 0
+    cvar.nbns = 0
+    cvar.smb = 0
 
     cvar.IDs = []
     cvar.ports = []

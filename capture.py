@@ -25,7 +25,7 @@ import subprocess
 import json
 from queue import *
 import set
-
+import queues
 
 # capture packets using wireshark and convert them to python dictionary objects
 # args input-file-name, ethernet-interface, how-long
@@ -70,8 +70,9 @@ class packetcapture (threading.Thread):
             if (not line and p.poll() is not None):
                 # possible could delay here to let processing complete
                 print("capture.packetcapture: We're done - no input and tshark exited")
-                set.end_of_file=True
+                send_data({})
                 break
+        print("capture.packetcapture.run: Exiting thread")
         p.stdout.close()
         p.wait()
 
@@ -81,37 +82,36 @@ class packetcapture (threading.Thread):
 def send_data(dictionary):
     #print("sending dictionary size: ", len(dictionary))
     #print("sending dictionary : ", dictionary)
-    set.packet_count +=1
-    set.sharedQ.put(dictionary)
+    queues.sharedQ.put(dictionary)
 
 # this function unwraps a multi level JSON object into a python dictionary with key value pairs
 
+keymap = {}
 
+import re
 def unwrap(keyval, temp):
 
     for key1, value1 in keyval:
         if isinstance(value1, (str, bool, list)):
-            # weirdness in the export format when using EK
-            # The json has some with xxx.flags xxx.flags_tree xx.flags.yyy the _tree doesn't show up in this format
-            temp[key1
-                 .replace("tcp_tcp_", "tcp.")
-                 .replace("udp_udp_", "udp.")
-                 .replace("igmp_igmp", "igmp.")
-                 .replace("ip_ip_", "ip.")
-                 .replace("ipv6_ipv6_","ipv6.")
-                 .replace("frame_frame_", "frame.")
-                 .replace("eth_eth_", "eth.")
-                 .replace("dns_dns_", "dns.")
-                 .replace("ssh_ssh_", "ssh.")
-                 .replace("tls_tls_", "tls.")
-                 .replace("http_http_","http.")
-                 .replace("https_https_","https.")
-                 .replace("dhcp_dhcp_","dhcp.")
-                 # these are inside a key and maybe should be more qualified
-                 .replace("request_","request.")
-                 .replace("record_", "record.")
-                 .replace("flags_", "flags.")
-                 ] = value1
+            if key1 not in keymap: 
+                # weirdness in the export format when using EK which we use because all on one line
+                # The json has some with xxx.flags xxx.flags_tree xx.flags.yyy the _tree doesn't show up in this format
+                # couldn't figure out how to convert 'xxx_xxx_' to 'xxx.' so converted 'xxx_xxx_' to 'xxx__' and then 'xxx.'
+                    # found src_ and dst_ in arp 
+                    # found request_ record_ flags_ inside some keys.  Might want to tighten down record_ can be an inner key
+                massagedKey1 = re.sub(r'(\w+_)(\1)+', r'\1_',key1) \
+                    .replace("__",".") \
+                    .replace("request_","request.") \
+                    .replace("record_", "record.") \
+                    .replace("flags_", "flags.") \
+                    .replace("src_", "src.") \
+                    .replace("dst_", "dst.") 
+                # add the before and after to the map so we don't have to calculate again
+                keymap[key1] = massagedKey1
+                #print("registered mapping: ", key1, " --> ",massagedKey1)
+
+            temp[keymap[key1]] = value1
+
         elif value1 is None:
             #print("Ignoring and tossing null value", key1)
             pass

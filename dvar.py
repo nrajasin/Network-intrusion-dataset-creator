@@ -21,23 +21,31 @@
 # SOFTWARE.
 
 
-# sliding window size
-global time_window
-time_window = 5000  # msec
 
-# when streaming - how long to run in seconds
-global howlong
-howlong = 120
+# counters across all processing across all windows
 
-global interface
-interface = "eth0"
+# set in detectors
+global tcp_count
+tcp_count = 0
+# set in detectors
+global udp_count
+udp_count = 0
+# set in detectors
+global arp_count
+arp_count = 0
+# set in detectors
+global igmp_count
+igmp_count = 0
+# set in detectors
+global not_analyzed_count
+not_analyzed_count = 0
 
-# setting this to some value tells capture to read from file
-global input_file_name
-input_file_name = None
-
-global output_file_name
-output_file_name = 'dataset.csv'
-
-global tshark_program
-tshark_program = "tshark"
+# set in detectors
+global tcp
+tcp = {}
+# set in detectors
+global udp
+udp = {}
+# set in detectors
+global arp
+arp = {}

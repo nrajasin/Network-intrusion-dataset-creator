@@ -31,10 +31,6 @@ import argparse
 
 def main():
 
-    set.tcp_count = 0
-    set.udp_count = 0
-    set.packet_count = 0
-
     parser = argparse.ArgumentParser(description = "Create time window statistics for pcap stream or file")
     parser.add_argument("-s","--sourcefile", default=set.input_file_name,  help="provide a pcap input file name instead of reading live stream",action="store")
     parser.add_argument("-i","--interface",  default=set.interface,        help="use an interface.  ["+ set.interface +"]",                     action="store")

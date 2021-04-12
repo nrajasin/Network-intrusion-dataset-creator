@@ -20,6 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+# cvars should only be used from counts.py
 
 global window_end_time
 window_end_time = 0
@@ -65,6 +66,10 @@ global smtp
 smtp = 0
 global dhcp
 dhcp = 0
+global nbns
+nbns = 0
+global smb
+smb = 0
 
 # protocol counts for an individual window
 global tcp

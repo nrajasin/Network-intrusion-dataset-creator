@@ -22,6 +22,7 @@
 
 import threading
 import set
+import queues
 
 # check the traffic for different services in the traffic suhc as tls,http,smtp
 class serviceidentify (threading.Thread):
@@ -35,9 +36,13 @@ class serviceidentify (threading.Thread):
         service_count = 0
         while True:
 
-            if set.servicesQ.empty() == False:
+            if queues.servicesQ.empty() == False:
 
-                Datalist = set.servicesQ.get()
+                Datalist = queues.servicesQ.get()
+                if not Datalist:
+                    print("services.serviceidentity.run: We're done - empty dictionary received on queue")
+                    queues.timesQ.put([])
+                    break
                 service_count +=1
                 #print("services invoked "+str(service_count)+" times. Notified about ", Datalist[0])
                 ID = Datalist[0]
@@ -53,12 +58,17 @@ class serviceidentify (threading.Thread):
                     dns(Data,found_services)
                     smtp(Data,found_services)
                     dhcp(Data,found_services)
+                    nbns(Data,found_services)
+                    smb(Data, found_services)
 
                 if len(found_services) > 0:
                     Datalist.append(found_services)
                 else:
                     Datalist.append(["no service"])
-                set.timesQ.put(Datalist)
+                    # un-comment to see packets that had  no found service - a lot of TCP/UDP don't have services here, ARP for instance
+                    # print(Data)
+                queues.timesQ.put(Datalist)
+        print("services.serviceidentity.run: Exiting thread")
 
 
 # if more services are needed they can be added in the following template
@@ -107,3 +117,14 @@ def dhcp(Data,found_services):
     # was dhcpv6.msgtype
     if 'dhcp.type' in Data:
         found_services.append("dhcp")
+
+
+def nbns(Data,found_services):
+    if 'nbns.id' in Data:
+        found_services.append("nbns")
+
+# we want to count smb request and responses but not fragments. Is this the right one?
+def smb(Data,found_services):
+    if 'smb.cmd' in Data:
+        found_services.append("smb")
+
