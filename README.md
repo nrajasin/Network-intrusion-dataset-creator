@@ -8,13 +8,19 @@ The resulting _CSV_ file contains one row of data for each time segment.
 
 ## Sample CSV output
 
-| tcp_frame_length | tcp_ip_length | tcp_length | udp_frame_length | udp_ip_length | udp_length | arp_frame_length | src_length | dst_length | num_tls | num_http | num_ftp | num_ssh | num_smtp | num_dhcp | num_dns | num_nbns |  num_tcp | num_udp | num_arp | num_igmp | connection_pairs | num_ports | num_packets | window_end_time |
-| - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
-| 0 | 0 | 0 | 1029 | 875  | 655  | 0 | 875  | 655  | 0 | 0 | 0 | 0 | 0 | 0 | 11 | 0 | 11 | 0  | 0 | 0 | 2  | 10 | 11 | 1573510808578 |
-| 0 | 0 | 0 | 6049 | 5475 | 4655 | 0 | 5475 | 4655 | 0 | 0 | 0 | 0 | 0 | 0 | 39 | 0 | 0  | 41 | 0 | 0 | 7  | 19 | 41 | 1573510813698 |
-| 0 | 0 | 0 | 3909 | 3629 | 3229 | 0 | 3629 | 3229 | 0 | 0 | 0 | 0 | 0 | 0 | 19 | 0 | 0  | 20 | 0  | 0 | 7 | 12 | 20 | 1573510818748 |
-| 32231 | 30504 | 25544 | 7365 | 6791 | 5971 | 0 | 6791 | 5971 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 24 | 118 | 41 | 0 | 2 | 6 | 29 | 161 | 1573510824230 |
-| 63847 | 61047 | 52339 | 7187 | 6669 | 5929 | 0 | 6669 | 5929 | 7 | 0 | 0 | 0 | 0 | 0 | 0 | 29 | 194 | 37 | 0 | 0 | 10 | 34 | 231 | 1573510829288 |
+| tcp_frame_length | tcp_ip_length | tcp_length | udp_frame_length | udp_ip_length | udp_length | arp_frame_length | src_length | dst_length | num_tls | num_http | num_ftp | num_ssh | num_smtp | num_dhcp | num_dns | num_nbns | num_smb | num_smb2 | num_tcp | num_udp | num_arp | num_igmp | connection_pairs | num_ports | num_packets | window_end_time |
+| - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| 0 | 0 | 0 | 2006 | 1084 | 1118 | 210 | 1084 | 1118 | 0 | 2 | 0 | 0 | 0 | 0 | 16 | 4 | 0 | 0 | 0 | 22 | 5 | 18 | 8 | 14 | 45 | 14806 |
+| 0 | 0 | 0 | 3695 | 2901 | 2669 | 0 | 2901 | 2669 | 0 | 5 | 0 | 0 | 0 | 0 | 6 | 15 | 3 | 0 | 0 | 29 | 0 | 6 | 4 | 8 | 35 | 20006 |
+| 0 | 0 | 0 | 16865 | 2579 | 15143 | 0 | 2579 | 15143 | 0 | 18 | 0 | 0 | 0 | 0 | 4 | 0 | 0 | 0 | 0 | 33 | 0 | 9 | 4 | 12 | 42 | 25533 |
+| 0 | 0 | 0 | 9755 | 1810 | 8593 | 126 | 1810 | 8593 | 0 | 18 | 0 | 0 | 0 | 4 | 0 | 0 | 0 | 0 | 0 | 23 | 3 | 3 | 5 | 7 | 29 | 30699 |
+| 0 | 0 | 0 | 21451 | 8361 | 19217 | 546 | 8361 | 19217 | 0 | 18 | 0 | 0 | 0 | 0 | 18 | 4 | 0 | 0 | 0 | 51 | 13 | 25 | 10 | 19 | 89 | 35866 |
+| 0 | 0 | 0 | 12423 | 6106 | 10655 | 0 | 6106 | 10655 | 0 | 36 | 0 | 0 | 0 | 0 | 4 | 2 | 0 | 0 | 0 | 42 | 0 | 0 | 4 | 7 | 42 | 40908 |
+| 0 | 0 | 0 | 5773 | 3116 | 4993 | 0 | 3116 | 4993 | 0 | 10 | 0 | 0 | 0 | 0 | 2 | 8 | 0 | 0 | 0 | 20 | 0 | 0 | 4 | 7 | 20 | 45909 |
+| 0 | 0 | 0 | 5642 | 3236 | 4638 | 84 | 3236 | 4638 | 0 | 6 | 0 | 0 | 0 | 0 | 6 | 7 | 3 | 0 | 0 | 26 | 2 | 0 | 5 | 11 | 28 | 51575 |
+| 0 | 0 | 0 | 3511 | 2230 | 2575 | 168 | 2230 | 2575 | 0 | 9 | 0 | 0 | 0 | 0 | 4 | 5 | 5 | 0 | 0 | 24 | 4 | 0 | 6 | 10 | 28 | 56576 |
+| 0 | 0 | 0 | 5834 | 3719 | 5122 | 210 | 3719 | 5122 | 0 | 4 | 0 | 0 | 0 | 3 | 2 | 1 | 3 | 0 | 0 | 18 | 5 | 0 | 9 | 14 | 23 | 61578 |
+| 13786 | 13362 | 12314 | 26929 | 13454 | 22825 | 420 | 13454 | 22825 | 0 | 24 | 0 | 0 | 0 | 5 | 31 | 16 | 2 | 0 | 26 | 96 | 10 | 30 | 16 | 39 | 162 | 66607 |
 
 ## Attribution
 If you are using this for research purposes please cite the publication listed below. The bibtex is as follows. 
@@ -118,6 +124,7 @@ sudo tshark  -i eth0 -a duration:120 -w /tmp/foo.pcap -F pcap
 
 1. IPV6 traffic does not have a `ip.len` field.  This means that the `tcp_ip_length` value in the result set only includes ipv4 traffic.
     * This is true for TCP and UDP
-1. When testing with a file, my sample froze eating one full core at 83 frames.  Ignore the number but know the app gets slower and slower probably because it keeps adding data to the globsl vars.
+1. Window analysis times are linear with the number of packets
     * test with ransomware samples from unavarra.es which came from other sites.
 1. This application has multiple concurrent threads but does not execute as parallel operations due to limitations in Python and the GIL.
+1. NBNS , SMB and SMB2 service counts have not ben vetted. They may be correct or overcount. 

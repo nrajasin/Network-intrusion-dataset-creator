@@ -50,7 +50,8 @@ class timesandcounts (threading.Thread):
                           'udp_frame_length', 'udp_ip_length', 'udp_length', 
                           'arp_frame_length', 
                           'src_length', 'dst_length', 
-                          'num_tls', 'num_http', 'num_ftp', 'num_ssh', 'num_smtp', 'num_dhcp', 'num_dns', 'num_nbns', 'num_smb',
+                          'num_tls', 'num_http', 'num_ftp', 'num_ssh', 'num_smtp', 'num_dhcp', 'num_dns', 
+                          'num_nbns', 'num_smb', 'num_smb2',
                           'num_tcp', 'num_udp', 'num_arp', 'num_igmp', 
                           'connection_pairs', 'num_ports', 'num_packets', 'window_end_time']
 
@@ -185,6 +186,8 @@ def get_services(slist):
         cvar.nbns +=1
     elif 'smb' in slist:
         cvar.smb +=1
+    elif 'smb2' in slist:
+        cvar.smb2 +=1
 
 
 def check_ID(ID):
@@ -226,6 +229,7 @@ def writewindow(writer, rowdata):
     csvrowdata['num_dns'] = rowdata.dns
     csvrowdata['num_nbns'] = rowdata.nbns
     csvrowdata['num_smb'] = rowdata.smb
+    csvrowdata['num_smb2'] = rowdata.smb2
 
     csvrowdata['num_tcp'] = rowdata.tcp
     csvrowdata['num_udp'] = rowdata.udp
@@ -258,6 +262,7 @@ def resetwindow(time_window_end):
     cvar.dhcp = 0
     cvar.nbns = 0
     cvar.smb = 0
+    cvar.smb2 = 0
 
     cvar.IDs = []
     cvar.ports = []

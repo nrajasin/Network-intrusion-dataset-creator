@@ -60,13 +60,15 @@ class serviceidentify (threading.Thread):
                     dhcp(Data,found_services)
                     nbns(Data,found_services)
                     smb(Data, found_services)
+                    smb2(Data, found_services)
 
                 if len(found_services) > 0:
                     Datalist.append(found_services)
                 else:
                     Datalist.append(["no service"])
-                    # un-comment to see packets that had  no found service - a lot of TCP/UDP don't have services here, ARP for instance
-                    # print(Data)
+                    # un-comment to see packets that had  no found service - 
+                    # falling into here is expected a lot of TCP/UDP don't have services here, ARP for instance
+                    #print(Data)
                 queues.timesQ.put(Datalist)
         print("services.serviceidentity.run: Exiting thread")
 
@@ -119,12 +121,19 @@ def dhcp(Data,found_services):
         found_services.append("dhcp")
 
 
+# we want to count nbns request and responses but not fragments. Is this the right one?
 def nbns(Data,found_services):
     if 'nbns.id' in Data:
         found_services.append("nbns")
 
 # we want to count smb request and responses but not fragments. Is this the right one?
+# could subdivide by cmd type
 def smb(Data,found_services):
     if 'smb.cmd' in Data:
         found_services.append("smb")
 
+# we want to count smb2 request and responses but not fragments. Is this the right one?
+# could subdivide by cmd type
+def smb2(Data,found_services):
+    if 'smb2.cmd' in Data:
+        found_services.append("smb2")

@@ -70,6 +70,8 @@ global nbns
 nbns = 0
 global smb
 smb = 0
+global smb2
+smb2 = 0
 
 # protocol counts for an individual window
 global tcp
