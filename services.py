@@ -20,99 +20,111 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-
-
-
-
-
 import threading
 import set
+import queues
 
+# check the traffic for different services in the traffic suhc as tls,http,smtp
+class serviceidentify (threading.Thread):
+    def __init__(self, threadID, name):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.name = name
 
-## check the traffic for different services in the traffic suhc as ssl,http,smtp
+    def run(self):
+        print("services.services: run()")
+        service_count = 0
+        while True:
 
-class services (threading.Thread):
-	def __init__(self, threadID, name):
-		threading.Thread.__init__(self)
-		self.threadID = threadID
-		self.name = name
-	def run(self):
-		service_count=0
-		while True:
+            if queues.servicesQ.empty() == False:
 
-			if set.servicesQ.empty()==False:
-				
-				Datalist=set.servicesQ.get()
-				global service_count
-				service_count=service_count+1
-				global serv
-				serv =[]
-				global ID
-				ID=Datalist[0]
-				Data=Datalist[1]
-				global Prot1
-				Prot1=Datalist[2]
-				if Prot1=="tcp" or Prot1=="udp" :
-									
-					ssl(Data)
-					http(Data)
-					ftp(Data)
-					ssh(Data)
-					dns(Data)
-					smtp(Data)
-					dhcp(Data)
-					
-				if len(serv)>0:
-					Datalist.append(serv)
-					set.timesQ.put(Datalist)
-				else:
-					Datalist.append(["no service"])
-					set.timesQ.put(Datalist)
+                Datalist = queues.servicesQ.get()
+                if not Datalist:
+                    print("services.serviceidentity.run: We're done - empty dictionary received on queue")
+                    queues.timesQ.put([])
+                    break
+                service_count +=1
+                #print("services invoked "+str(service_count)+" times. Notified about ", Datalist[0])
+                ID = Datalist[0]
+                Data = Datalist[1]
+                Prot1 = Datalist[2]
+                found_services = []
+                if Prot1 == "tcp" or Prot1 == "udp":
 
+                    tls(Data,found_services)
+                    http(Data,found_services)
+                    ftp(Data,found_services)
+                    ssh(Data,found_services)
+                    dns(Data,found_services)
+                    smtp(Data,found_services)
+                    dhcp(Data,found_services)
+                    nbns(Data,found_services)
+                    smb(Data, found_services)
 
-
-				
-				
-				# print(ID,Data,Prot1,service_count)
+                if len(found_services) > 0:
+                    Datalist.append(found_services)
+                else:
+                    Datalist.append(["no service"])
+                    # un-comment to see packets that had  no found service - a lot of TCP/UDP don't have services here, ARP for instance
+                    # print(Data)
+                queues.timesQ.put(Datalist)
+        print("services.serviceidentity.run: Exiting thread")
 
 
 # if more services are needed they can be added in the following template
+def tls(Data,found_services):
 
-def ssl(Data):
-	
-	if "ssl.record.content_type" in Data :
-		
-		serv.append("ssl")
-		
+    if "tls.record.content_type" in Data:
 
-def http(Data):
-	
-	if "http.request.method" in Data :
-		
-		serv.append("ssl")
-		
+        found_services.append("tls")
 
-def ftp(Data):
-	
-	if "ftp.request" in Data :
-		serv.append("ssl")
-		
 
-def ssh(Data):
-	
-	if  'ssh.payload' in Data :
-		serv.append("ssl")
-	
-	
-def dns(Data):
-	
-	if  'dns.flags' in Data :
-		serv.append("ssl")
+def http(Data,found_services):
 
-def smtp(Data):
-	if 'smtp.response' in Data :
-		serv.append("ssl")
+    if "http.request.method" in Data:
 
-def dhcp(Data):
-	if 'dhcpv6.msgtype' in Data :
-		serv.append("dhcp")
+        found_services.append("http")
+
+
+# not yet validated
+def ftp(Data,found_services):
+
+    if "ftp.request" in Data:
+        found_services.append("ftp")
+
+
+def ssh(Data,found_services):
+
+    # ssh.message_code?
+    # was ssh.payload
+    if 'ssh.encrypted_packet' in Data:
+        found_services.append("ssh")
+
+
+def dns(Data,found_services):
+
+    if 'dns.flags' in Data:
+        found_services.append("dns")
+
+
+# not yet validated
+def smtp(Data,found_services):
+    if 'smtp.response' in Data:
+        found_services.append("smtp")
+
+
+def dhcp(Data,found_services):
+    # was dhcpv6.msgtype
+    if 'dhcp.type' in Data:
+        found_services.append("dhcp")
+
+
+def nbns(Data,found_services):
+    if 'nbns.id' in Data:
+        found_services.append("nbns")
+
+# we want to count smb request and responses but not fragments. Is this the right one?
+def smb(Data,found_services):
+    if 'smb.cmd' in Data:
+        found_services.append("smb")
+

@@ -21,64 +21,31 @@
 # SOFTWARE.
 
 
-global instance
-instance=1
-global localdat
-localdat={}
 
+# counters across all processing across all windows
 
-global tcp_frame_length
-tcp_frame_length=0
-global tcp_ip_length
-tcp_ip_length=0
-global tcp_length
-tcp_length=0
+# set in detectors
+global tcp_count
+tcp_count = 0
+# set in detectors
+global udp_count
+udp_count = 0
+# set in detectors
+global arp_count
+arp_count = 0
+# set in detectors
+global igmp_count
+igmp_count = 0
+# set in detectors
+global not_analyzed_count
+not_analyzed_count = 0
 
-global udp_frame_length
-udp_frame_length=0
-global udp_ip_length
-udp_ip_length=0
-global udp_length
-udp_length=0
-
-global arp_frame_length
-arp_frame_length=0
-
-global src_length
-src_length=0
-
-global dst_length
-dst_length=0
-
-
-global ssl
-ssl=0
-global http
-http=0
-global ftp
-ftp=0
-global ssh
-ssh=0
-global dns
-dns=0
-global smtp
-smtp=0
-global dhcp
-dhcp=0
-
+# set in detectors
 global tcp
-tcp=0
+tcp = {}
+# set in detectors
 global udp
-udp=0
+udp = {}
+# set in detectors
 global arp
-arp=0
-
-global IDs
-IDs=[]
-
-
-global ports
-ports=[]
-
-global tot_pack
-tot_pack=0
+arp = {}
