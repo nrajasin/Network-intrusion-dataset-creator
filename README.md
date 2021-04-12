@@ -6,6 +6,20 @@ your own dataset or use this to read a PCAP from another source and convert that
 This program accepts a network log, _pcap_, and creates summary statistics using sliding window that moves through the log stream.
 The resulting _CSV_ file contains one row of data for each time segment.
 
+### Data Flow 
+| Stage | Python Module  | | Explanation |
+| - | - | -  | - |
+| Ethernet interface _or_ pcap | Python Module| \| | data source |
+| tshark - interface ingest    |              | \| | converts to one line per packet json-sh format |
+|                              | `capture `   | \| | reads from tshark output - massages labels |
+| sharedQ                      |              | \| | communication Queue |
+|                              | `detectors`  | \| | protocol detectors and protocol statistics |
+| servicesQ                    |              | \| | communication Queue |
+|                              | `services`   | \| | higher level TCP and UDP service counts |
+| timesQ                       |              | \| | communicaton Queue  |
+|                              | `counts`     | \| | time windowing and file writer |
+| csv file                     |              | \| | feature file for model training |
+
 ## Sample CSV output
 
 | tcp_frame_length | tcp_ip_length | tcp_length | udp_frame_length | udp_ip_length | udp_length | arp_frame_length | src_length | dst_length | num_tls | num_http | num_ftp | num_ssh | num_smtp | num_dhcp | num_dns | num_nbns | num_smb | num_smb2 | num_tcp | num_udp | num_arp | num_igmp | connection_pairs | num_ports | num_packets | window_end_time |
