@@ -21,31 +21,24 @@
 # SOFTWARE.
 
 
+class datasetSummary():
 
-# counters across all processing across all windows
+    # counters across all processing across all windows
 
-# set in detectors
-global tcp_count
-tcp_count = 0
-# set in detectors
-global udp_count
-udp_count = 0
-# set in detectors
-global arp_count
-arp_count = 0
-# set in detectors
-global igmp_count
-igmp_count = 0
-# set in detectors
-global not_analyzed_count
-not_analyzed_count = 0
+    # set in detectors
+    tcp_count = 0
+    # set in detectors
+    udp_count = 0
+    # set in detectors
+    arp_count = 0
+    # set in detectors
+    igmp_count = 0
+    # set in detectors
+    not_analyzed_count = 0
 
-# set in detectors
-global tcp
-tcp = {}
-# set in detectors
-global udp
-udp = {}
-# set in detectors
-global arp
-arp = {}
+    # set in detectors
+    tcp = {}
+    # set in detectors
+    udp = {}
+    # set in detectors
+    arp = {}

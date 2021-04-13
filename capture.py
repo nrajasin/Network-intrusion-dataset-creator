@@ -24,7 +24,6 @@ import threading
 import subprocess
 import json
 from queue import *
-import set
 import queues
 
 # capture packets using wireshark and convert them to python dictionary objects

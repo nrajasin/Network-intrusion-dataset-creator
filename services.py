@@ -21,7 +21,6 @@
 # SOFTWARE.
 
 import threading
-import set
 import queues
 
 # check the traffic for different services in the traffic suhc as tls,http,smtp

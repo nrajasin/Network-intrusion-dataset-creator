@@ -21,7 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import set
+from settings import appsettings
 from detectors import *
 from services import *
 from counts import *
@@ -30,31 +30,33 @@ import argparse
 
 
 def main():
+    # load the settings
+    settings = appsettings()
 
     parser = argparse.ArgumentParser(description = "Create time window statistics for pcap stream or file")
-    parser.add_argument("-s","--sourcefile", default=set.input_file_name,  help="provide a pcap input file name instead of reading live stream",action="store")
-    parser.add_argument("-i","--interface",  default=set.interface,        help="use an interface.  ["+ set.interface +"]",                     action="store")
-    parser.add_argument("-l","--howlong",    default=set.howlong,          help="number of seconds to run live mode. ["+str(set.howlong)+"]",   action="store", type=int)
-    parser.add_argument("-o","--outfile",    default=set.output_file_name, help="change the name of the output file ["+set.output_file_name+"]",action="store")
-    parser.add_argument("-w","--window",     default=set.time_window,      help="time window in msec ["+str(set.time_window)+"]",               action="store", type=int)
-    parser.add_argument("-t","--tshark",     default=set.tshark_program,   help="tshark program ["+set.tshark_program+"]",                      action="store")
+    parser.add_argument("-s","--sourcefile", default=settings.input_file_name,  help="provide a pcap input file name instead of reading live stream",action="store")
+    parser.add_argument("-i","--interface",  default=settings.interface,        help="use an interface.  ["+ settings.interface +"]",                     action="store")
+    parser.add_argument("-l","--howlong",    default=settings.howlong,          help="number of seconds to run live mode. ["+str(settings.howlong)+"]",   action="store", type=int)
+    parser.add_argument("-o","--outfile",    default=settings.output_file_name, help="change the name of the output file ["+settings.output_file_name+"]",action="store")
+    parser.add_argument("-w","--window",     default=settings.time_window,      help="time window in msec ["+str(settings.time_window)+"]",               action="store", type=int)
+    parser.add_argument("-t","--tshark",     default=settings.tshark_program,   help="tshark program ["+settings.tshark_program+"]",                      action="store")
     args = parser.parse_args()
     print("main:main Running with: ", vars(args))
     
     if (args.sourcefile):
-        set.input_file_name=args.sourcefile
+        settings.input_file_name=args.sourcefile
     if (args.interface):
-        set.interface = args.interface
+        settings.interface = args.interface
     if (args.howlong):
-        set.howlong = args.howlong
+        settings.howlong = args.howlong
     if (args.outfile):
-        set.output_file_name=args.outfile
+        settings.output_file_name=args.outfile
     if (args.window):
-        set.time_window=args.window
+        settings.time_window=args.window
     if (args.tshark):
-        set.tshark_program=args.tshark
+        settings.tshark_program=args.tshark
 
-    datacollect = packetcapture(1, 'packet capture data',1, set.tshark_program, set.input_file_name, set.interface, set.howlong)
+    datacollect = packetcapture(1, 'packet capture data',1, settings.tshark_program, settings.input_file_name, settings.interface, settings.howlong)
     datacollect.start()
 
     dataprocess = packetanalyze(2, 'packet analyzing thread')
@@ -63,7 +65,7 @@ def main():
     dataservices = serviceidentify(3, 'service analyzing thread')
     dataservices.start()
 
-    timecounts = timesandcounts(4, 'time the packets',1, set.output_file_name)
+    timecounts = timesandcounts(4, 'time the packets',1, settings.time_window, settings.output_file_name)
     timecounts.start()
 
 

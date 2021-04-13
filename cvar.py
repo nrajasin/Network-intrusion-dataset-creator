@@ -22,73 +22,47 @@
 
 # cvars should only be used from counts.py
 
-global window_end_time
-window_end_time = 0
+class windowcounts():
 
-global out_record_count
-out_record_count = 1
+    window_end_time = 0
 
-global tcp_frame_length
-tcp_frame_length = 0
-global tcp_ip_length
-tcp_ip_length = 0
-global tcp_length
-tcp_length = 0
+    out_record_count = 1
 
-global udp_frame_length
-udp_frame_length = 0
-global udp_ip_length
-udp_ip_length = 0
-global udp_length
-udp_length = 0
+    tcp_frame_length = 0
+    tcp_ip_length = 0
+    tcp_length = 0
 
-global arp_frame_length
-arp_frame_length = 0
+    udp_frame_length = 0
+    udp_ip_length = 0
+    udp_length = 0
 
-global src_length
-src_length = 0
+    arp_frame_length = 0
 
-global dst_length
-dst_length = 0
+    src_length = 0
 
-# TCP / UDP service counts for an individual window
-global tls
-tls = 0
-global http
-http = 0
-global ftp
-ftp = 0
-global ssh
-ssh = 0
-global dns
-dns = 0
-global smtp
-smtp = 0
-global dhcp
-dhcp = 0
-global nbns
-nbns = 0
-global smb
-smb = 0
-global smb2
-smb2 = 0
+    dst_length = 0
 
-# protocol counts for an individual window
-global tcp
-tcp = 0
-global udp
-udp = 0
-global arp
-arp = 0
-global igmp
-igmp = 0
+    # TCP / UDP service counts for an individual window
+    tls = 0
+    http = 0
+    ftp = 0
+    ssh = 0
+    dns = 0
+    smtp = 0
+    dhcp = 0
+    nbns = 0
+    smb = 0
+    smb2 = 0
 
-global IDs
-IDs = []
+    # protocol counts for an individual window
+    tcp = 0
+    udp = 0
+    arp = 0
+    igmp = 0
+
+    IDs = []
 
 
-global ports
-ports = []
+    ports = []
 
-global tot_pack
-tot_pack = 0
+    tot_pack = 1

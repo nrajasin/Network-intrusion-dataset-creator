@@ -20,24 +20,21 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+class appsettings():
 
-# sliding window size
-global time_window
-time_window = 5000  # msec
+    # sliding window size
+    time_window = 5000  # msec
 
-# when streaming - how long to run in seconds
-global howlong
-howlong = 120
+    # when streaming - how long to run in seconds
+    howlong = 120
 
-global interface
-interface = "eth0"
+    # live capture network interface
+    interface = "eth0"
 
-# setting this to some value tells capture to read from file
-global input_file_name
-input_file_name = None
+    # setting this to some value tells capture to read from file
+    input_file_name = None
 
-global output_file_name
-output_file_name = 'dataset.csv'
+    output_file_name = 'dataset.csv'
 
-global tshark_program
-tshark_program = "tshark"
+    #command to run including path if required
+    tshark_program = "tshark"
