@@ -59,7 +59,7 @@ class timesandcounts (threading.Thread):
         print("counts.times: run()")
         with open(self.csv_file_path, 'w') as csvfile:
 
-            writer = csv.DictWriter(csvfile, fieldnames=self.fieldnames)
+            writer = csv.DictWriter(csvfile, fieldnames=self.fieldnames, restval='0')
             writer.writeheader()
             csvfile.flush()
 
@@ -194,11 +194,12 @@ class timesandcounts (threading.Thread):
     def accumulate_IDs(self, ID, cvar):
         if not ID in cvar.IDs:
             cvar.IDs.append(ID)
+            #print(cvar.IDs)
 
 
-    def accumulate_ports(self, port, cvar):
-        for p in port:
-
+    # Accumulated for TCP and IP
+    def accumulate_ports(self, ports, cvar):
+        for p in ports:
             if not p in cvar.ports:
                 cvar.ports.append(p)
 
@@ -253,8 +254,6 @@ class timesandcounts (threading.Thread):
 
     # Reset all the values for this window
     def resetwindow(self, time_window_end,out_window_index):
-        cvar = windowcounts()
-        cvar.window_end_time = time_window_end
-        cvar.out_window_index = out_window_index+1
+        cvar = windowcounts(time_window_end = time_window_end, out_window_index = out_window_index+1)
         return cvar
 
