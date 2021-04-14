@@ -111,8 +111,7 @@ class timesandcounts (threading.Thread):
 
         # time in message. this float lh=to the second rh is msec - convert epoch time to msec
         full_time = Data['frame.time_epoch']
-        full_time = int(float(full_time)*1000)
-        packet_frame_time = full_time
+        packet_frame_time = int(float(full_time)*1000)
         #print ("packet_frame_time:"+str(packet_frame_time)+" stop:"+str(time_window_stop))
 
         if packet_frame_time <= time_window_stop:
@@ -120,7 +119,11 @@ class timesandcounts (threading.Thread):
             pass
         else:
             time_window_index +=1
-            time_window_start_ceil = packet_frame_time
+            # first interval starts on the first packet. all others are locked to that
+            if time_window_stop == 0:
+                time_window_start_ceil = packet_frame_time
+            else: 
+                time_window_start_ceil = time_window_stop
             time_window_stop = time_window_start_ceil + self.time_window
             #print("counts.timecheck count:"+str(time_window_index)+" stopTime:"+str(time_window_stop))
 
