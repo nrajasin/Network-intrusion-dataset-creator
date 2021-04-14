@@ -45,10 +45,6 @@ class windowcounts():
     # frame.len
     arp_frame_length = 0
 
-    src_length = 0
-
-    dst_length = 0
-
     # TCP / UDP service counts for an individual window
     num_tls = 0
     num_http = 0
