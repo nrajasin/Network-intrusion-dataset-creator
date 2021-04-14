@@ -26,16 +26,23 @@ class windowcounts():
 
     window_end_time = 0
 
-    out_record_count = 1
+    out_window_index = 1
 
+    # frame.len
     tcp_frame_length = 0
+    # ip.len
     tcp_ip_length = 0
+    # tcp.len
     tcp_length = 0
 
+    # frame.len
     udp_frame_length = 0
+    # ip.len
     udp_ip_length = 0
+    # udp.length
     udp_length = 0
 
+    # frame.len
     arp_frame_length = 0
 
     src_length = 0
@@ -43,26 +50,26 @@ class windowcounts():
     dst_length = 0
 
     # TCP / UDP service counts for an individual window
-    tls = 0
-    http = 0
-    ftp = 0
-    ssh = 0
-    dns = 0
-    smtp = 0
-    dhcp = 0
-    nbns = 0
-    smb = 0
-    smb2 = 0
+    num_tls = 0
+    num_http = 0
+    num_ftp = 0
+    num_ssh = 0
+    num_dns = 0
+    num_smtp = 0
+    num_dhcp = 0
+    num_nbns = 0
+    num_smb = 0
+    num_smb2 = 0
 
     # protocol counts for an individual window
-    tcp = 0
-    udp = 0
-    arp = 0
-    igmp = 0
+    num_tcp = 0
+    num_udp = 0
+    num_arp = 0
+    num_igmp = 0
 
     IDs = []
 
 
     ports = []
 
-    tot_pack = 1
+    num_packets = 1

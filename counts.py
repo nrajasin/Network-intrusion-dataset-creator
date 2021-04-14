@@ -37,7 +37,6 @@ class timesandcounts (threading.Thread):
     fieldnames = ['tcp_frame_length', 'tcp_ip_length', 'tcp_length', 
                           'udp_frame_length', 'udp_ip_length', 'udp_length', 
                           'arp_frame_length', 
-                          'src_length', 'dst_length', 
                           'num_tls', 'num_http', 'num_ftp', 'num_ssh', 'num_smtp', 'num_dhcp', 'num_dns', 
                           'num_nbns', 'num_smb', 'num_smb2',
                           'num_tcp', 'num_udp', 'num_arp', 'num_igmp', 
@@ -91,15 +90,15 @@ class timesandcounts (threading.Thread):
 
                     time_window_index, time_window_stop, self.current_time = self.timecheck(Data, time_window_stop, time_window_index)
 
-                    if time_window_index == self.cvar.out_record_count:
+                    if time_window_index == self.cvar.out_window_index:
                         #print("add to existing time block")
-                        self.cvar.tot_pack +=1
+                        self.cvar.num_packets +=1
                     else: 
                         #print("in new time block so aggregating and creating new block: ")
                         self.writewindow(writer,self.cvar)
                         csvfile.flush()
                         # clear variables for the next time window
-                        self.resetwindow(time_window_stop)
+                        self.cvar = self.resetwindow(time_window_stop, self.cvar.out_window_index)
 
                     self.calculate(ID, Data, Prot1, services, time_window_index, time_window_stop, self.cvar)
             # it is possible that we will get this before all messages have flowed through
@@ -141,7 +140,7 @@ class timesandcounts (threading.Thread):
                 cvar.tcp_ip_length = cvar.tcp_ip_length + 0
             cvar.tcp_length = cvar.tcp_length + int(Data['tcp.len'])
             self.count_services(services, cvar)
-            cvar.tcp +=1
+            cvar.num_tcp +=1
             self.accumulate_IDs(ID,cvar)
             self.accumulate_ports([Data['tcp.srcport'], Data['tcp.dstport']], cvar)
 
@@ -153,41 +152,41 @@ class timesandcounts (threading.Thread):
                 cvar.udp_ip_length = cvar.udp_ip_length+0
             cvar.udp_length = cvar.udp_length + int(Data['udp.length'])
             self.count_services(services, cvar)
-            cvar.udp +=1
+            cvar.num_udp +=1
             self.accumulate_IDs(ID, cvar)
             self.accumulate_ports([Data['udp.srcport'], Data['udp.dstport']], cvar)
 
         elif Prot1 == 'arp':
             cvar.arp_frame_length = cvar.arp_frame_length + int(Data['frame.len'])
-            cvar.arp +=1
+            cvar.num_arp +=1
             self.accumulate_IDs(ID, cvar)
         elif Prot1 == 'igmp':
             # TODO become more clever about igmp if needed
-            cvar.igmp += 1
+            cvar.num_igmp += 1
 
 
     def count_services(self, slist, cvar):
 
         if 'tls' in slist:
-            cvar.tls +=1
+            cvar.num_tls +=1
         elif 'http' in slist:
-            cvar.http +=1
+            cvar.num_http +=1
         elif 'ftp' in slist:
-            cvar.ftp +=1
+            cvar.num_ftp +=1
         elif 'ssh' in slist:
-            cvar.ssh +=1
+            cvar.num_ssh +=1
         elif 'dns' in slist:
-            cvar.dns +=1
+            cvar.num_dns +=1
         elif 'smtp' in slist:
-            cvar.smtp +=1
+            cvar.num_smtp +=1
         elif 'dhcp' in slist:
-            cvar.dhcp +=1
+            cvar.num_dhcp +=1
         elif 'nbns' in slist:
-            cvar.nbns +=1
+            cvar.num_nbns +=1
         elif 'smb' in slist:
-            cvar.smb +=1
+            cvar.num_smb +=1
         elif 'smb2' in slist:
-            cvar.smb2 +=1
+            cvar.num_smb2 +=1
 
 
     def accumulate_IDs(self, ID, cvar):
@@ -204,9 +203,17 @@ class timesandcounts (threading.Thread):
     # map cvar to a dictonary to bind to the csv writer
     # Write one time window as a row to the CSV file
     def writewindow(self, writer, rowdata):
-        print("    counts.times.calculate: Window: ", rowdata.out_record_count, 
-                "packetCount:", rowdata.tot_pack, 
+        print("    counts.times.calculate: Window: ", rowdata.out_window_index, 
+                "packetCount:", rowdata.num_packets, 
                 "endTime", datetime.utcfromtimestamp(rowdata.window_end_time/1000))
+
+        # this work but leaves unused fields empty instead of with zeros
+        # csvrowdata = rowdata.__dict__.copy()
+        # csvrowdata.pop('IDs', None) 
+        # csvrowdata.pop('ports', None)
+        # csvrowdata.pop('out_window_index',None)
+        # csvrowdata['connection_pairs'] = len(rowdata.IDs)
+        # csvrowdata['num_ports'] = len(rowdata.ports)
 
         csvrowdata = {}
         csvrowdata['tcp_frame_length'] = rowdata.tcp_frame_length
@@ -219,35 +226,33 @@ class timesandcounts (threading.Thread):
 
         csvrowdata['arp_frame_length'] = rowdata.arp_frame_length
 
-        csvrowdata['src_length'] = rowdata.udp_ip_length
-        csvrowdata['dst_length'] = rowdata.udp_length
+        csvrowdata['num_tls'] = rowdata.num_tls
+        csvrowdata['num_http'] = rowdata.num_http
+        csvrowdata['num_ftp'] = rowdata.num_ftp
+        csvrowdata['num_ssh'] = rowdata.num_ssh
+        csvrowdata['num_smtp'] = rowdata.num_smtp
+        csvrowdata['num_dhcp'] = rowdata.num_dhcp
+        csvrowdata['num_dns'] = rowdata.num_dns
+        csvrowdata['num_nbns'] = rowdata.num_nbns
+        csvrowdata['num_smb'] = rowdata.num_smb
+        csvrowdata['num_smb2'] = rowdata.num_smb2
 
-        csvrowdata['num_tls'] = rowdata.tls
-        csvrowdata['num_http'] = rowdata.http
-        csvrowdata['num_ftp'] = rowdata.ftp
-        csvrowdata['num_ssh'] = rowdata.ssh
-        csvrowdata['num_smtp'] = rowdata.smtp
-        csvrowdata['num_dhcp'] = rowdata.dhcp
-        csvrowdata['num_dns'] = rowdata.dns
-        csvrowdata['num_nbns'] = rowdata.nbns
-        csvrowdata['num_smb'] = rowdata.smb
-        csvrowdata['num_smb2'] = rowdata.smb2
-
-        csvrowdata['num_tcp'] = rowdata.tcp
-        csvrowdata['num_udp'] = rowdata.udp
-        csvrowdata['num_arp'] = rowdata.arp
-        csvrowdata['num_igmp'] = rowdata.igmp
+        csvrowdata['num_tcp'] = rowdata.num_tcp
+        csvrowdata['num_udp'] = rowdata.num_udp
+        csvrowdata['num_arp'] = rowdata.num_arp
+        csvrowdata['num_igmp'] = rowdata.num_igmp
         csvrowdata['connection_pairs'] = len(rowdata.IDs)
         csvrowdata['num_ports'] = len(rowdata.ports)
-        csvrowdata['num_packets'] = rowdata.tot_pack
+        csvrowdata['num_packets'] = rowdata.num_packets
 
         csvrowdata['window_end_time'] = rowdata.window_end_time
 
         writer.writerow(csvrowdata)
 
     # Reset all the values for this window
-    def resetwindow(self, time_window_end):
-        self.cvars = windowcounts()
-        self.cvar.window_end_time = time_window_end
-        self.cvar.out_record_count +=1
+    def resetwindow(self, time_window_end,out_window_index):
+        cvar = windowcounts()
+        cvar.window_end_time = time_window_end
+        cvar.out_window_index = out_window_index+1
+        return cvar
 
