@@ -85,10 +85,10 @@ class timesandcounts (threading.Thread):
                     if pack_count == 1:
                         # claim stop time was 0 which will cause a new window to be built
                         # starting time and current time are the message frame.time_epoch field
-                        time_window_index, time_window_stop, self.current_time = self.timecheck(Data, 0, time_window_index)
+                        time_window_index, time_window_stop, self.current_time = self.timecheck(Data['frame.time_epoch'], 0, time_window_index)
                         self.cvar.window_end_time = time_window_stop
 
-                    time_window_index, time_window_stop, self.current_time = self.timecheck(Data, time_window_stop, time_window_index)
+                    time_window_index, time_window_stop, self.current_time = self.timecheck(Data['frame.time_epoch'], time_window_stop, time_window_index)
 
                     if time_window_index == self.cvar.out_window_index:
                         #print("add to existing time block")
@@ -107,11 +107,10 @@ class timesandcounts (threading.Thread):
 
 
     # calculate the new time offsets
-    def timecheck(self, Data, time_window_stop, time_window_index):
-
-        # time in message. this float lh=to the second rh is msec - convert epoch time to msec
-        full_time = Data['frame.time_epoch']
-        packet_frame_time = int(float(full_time)*1000)
+    # fame.time_epoch - time in message.
+    def timecheck(self, frame_time_epoch, time_window_stop, time_window_index):
+        # this float lh=to the second rh is msec - convert epoch time to msec
+        packet_frame_time = int(float(frame_time_epoch)*1000)
         #print ("packet_frame_time:"+str(packet_frame_time)+" stop:"+str(time_window_stop))
 
         if packet_frame_time <= time_window_stop:
