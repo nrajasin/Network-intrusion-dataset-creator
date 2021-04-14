@@ -55,8 +55,8 @@ class packetanalyze (threading.Thread):
                             if self.Igmp(packetUnderExamination,self.dvar) == False:
                                 dvar.not_analyzed_count +=1
                                 # ip.proto does not always exist if not ip
-                                # print("Packet was not TCP, UDP, ARP, IGMP proto type:",packetUnderExamination['ip.proto'])
                                 # print("Packet was not TCP, UDP, ARP, IGMP ")
+                                # print("Packet was not TCP, UDP, ARP, IGMP proto type:",packetUnderExamination['ip.proto'])
                                 # print(packetUnderExamination)
         end_timer = time.perf_counter()
         coarse_pps = (self.dvar.tcp_count + self.dvar.udp_count + self.dvar.arp_count+ self.dvar.igmp_count + self.dvar.not_analyzed_count)/(end_timer-start_timer)

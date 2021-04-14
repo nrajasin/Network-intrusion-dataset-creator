@@ -61,13 +61,13 @@ class serviceidentify (threading.Thread):
                     smb(Data, found_services)
                     smb2(Data, found_services)
 
-                if len(found_services) > 0:
-                    Datalist.append(found_services)
-                else:
-                    Datalist.append(["no service"])
-                    # un-comment to see packets that had  no found service - 
-                    # falling into here is expected a lot of TCP/UDP don't have services here, ARP for instance
-                    #print(Data)
+                    if len(found_services) > 0:
+                        Datalist.append(found_services)
+                    else:
+                        Datalist.append(["no service"])
+                        # un-comment to see packets that had  no found service - 
+                        # falling into here is expected a lot of TCP/UDP don't have services here, ARP for instance
+                        #print(Data)
                 queues.timesQ.put(Datalist)
         print("services.serviceidentity.run: Exiting thread")
 
@@ -115,8 +115,7 @@ def smtp(Data,found_services):
 
 
 def dhcp(Data,found_services):
-    # was dhcpv6.msgtype
-    if 'dhcp.type' in Data:
+    if 'dhcp.type' in Data or 'dhcpv6.msgtype' in Data:
         found_services.append("dhcp")
 
 
