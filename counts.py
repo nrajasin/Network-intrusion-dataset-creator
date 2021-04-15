@@ -33,7 +33,7 @@ from cvar import windowcounts
 # Divide the data into time windows so that you can get average information for a given time
 
 
-class timesandcounts(threading.Thread):
+class TimesAndCounts(threading.Thread):
 
     fieldnames = [
         "tcp_frame_length",
@@ -130,10 +130,10 @@ class timesandcounts(threading.Thread):
                         self.cvar.num_packets += 1
                     else:
                         # print("counts.times.run: in new time block so aggregating and creating new block: ")
-                        self.writewindow(writer, self.cvar)
+                        self.write_window(writer, self.cvar)
                         csvfile.flush()
                         # clear variables for the next time window
-                        self.cvar = self.resetwindow(
+                        self.cvar = self.reset_window(
                             time_window_stop, self.cvar.out_window_index
                         )
 
@@ -260,63 +260,63 @@ class timesandcounts(threading.Thread):
 
     # map cvar to a dictonary to bind to the csv writer
     # Write one time window as a row to the CSV file
-    def writewindow(self, writer, rowdata):
+    def write_window(self, writer, one_record):
         print(
             "    counts.times.calculate: Window: ",
-            rowdata.out_window_index,
+            one_record.out_window_index,
             "packetCount:",
-            rowdata.num_packets,
+            one_record.num_packets,
             "endTime",
-            datetime.utcfromtimestamp(rowdata.window_end_time / 1000),
+            datetime.utcfromtimestamp(one_record.window_end_time / 1000),
         )
 
         # this work but leaves unused fields empty instead of with zeros
-        # csvrowdata = rowdata.__dict__.copy()
-        # csvrowdata.pop('IDs', None)
-        # csvrowdata.pop('ports', None)
-        # csvrowdata.pop('out_window_index',None)
-        # csvrowdata['connection_pairs'] = len(rowdata.IDs)
-        # csvrowdata['num_ports'] = len(rowdata.ports)
+        # record_for_csv = one_record.__dict__.copy()
+        # record_for_csv.pop('IDs', None)
+        # record_for_csv.pop('ports', None)
+        # record_for_csv.pop('out_window_index',None)
+        # record_for_csv['connection_pairs'] = len(one_record.IDs)
+        # record_for_csv['num_ports'] = len(one_record.ports)
 
-        csvrowdata = {}
-        csvrowdata["tcp_frame_length"] = rowdata.tcp_frame_length
-        csvrowdata["tcp_ip_length"] = rowdata.tcp_ip_length
-        csvrowdata["tcp_length"] = rowdata.tcp_length
+        record_for_csv = {}
+        record_for_csv["tcp_frame_length"] = one_record.tcp_frame_length
+        record_for_csv["tcp_ip_length"] = one_record.tcp_ip_length
+        record_for_csv["tcp_length"] = one_record.tcp_length
 
-        csvrowdata["udp_frame_length"] = rowdata.udp_frame_length
-        csvrowdata["udp_ip_length"] = rowdata.udp_ip_length
-        csvrowdata["udp_length"] = rowdata.udp_length
+        record_for_csv["udp_frame_length"] = one_record.udp_frame_length
+        record_for_csv["udp_ip_length"] = one_record.udp_ip_length
+        record_for_csv["udp_length"] = one_record.udp_length
 
-        csvrowdata["arp_frame_length"] = rowdata.arp_frame_length
+        record_for_csv["arp_frame_length"] = one_record.arp_frame_length
 
-        csvrowdata["num_tls"] = rowdata.num_tls
-        csvrowdata["num_http"] = rowdata.num_http
-        csvrowdata["num_ftp"] = rowdata.num_ftp
-        csvrowdata["num_ssh"] = rowdata.num_ssh
-        csvrowdata["num_smtp"] = rowdata.num_smtp
-        csvrowdata["num_dhcp"] = rowdata.num_dhcp
-        csvrowdata["num_dns"] = rowdata.num_dns
-        csvrowdata["num_nbns"] = rowdata.num_nbns
-        csvrowdata["num_smb"] = rowdata.num_smb
-        csvrowdata["num_smb2"] = rowdata.num_smb2
-        csvrowdata["num_pnrp"] = rowdata.num_pnrp
-        csvrowdata["num_wsdd"] = rowdata.num_wsdd
-        csvrowdata["num_ssdp"] = rowdata.num_ssdp
+        record_for_csv["num_tls"] = one_record.num_tls
+        record_for_csv["num_http"] = one_record.num_http
+        record_for_csv["num_ftp"] = one_record.num_ftp
+        record_for_csv["num_ssh"] = one_record.num_ssh
+        record_for_csv["num_smtp"] = one_record.num_smtp
+        record_for_csv["num_dhcp"] = one_record.num_dhcp
+        record_for_csv["num_dns"] = one_record.num_dns
+        record_for_csv["num_nbns"] = one_record.num_nbns
+        record_for_csv["num_smb"] = one_record.num_smb
+        record_for_csv["num_smb2"] = one_record.num_smb2
+        record_for_csv["num_pnrp"] = one_record.num_pnrp
+        record_for_csv["num_wsdd"] = one_record.num_wsdd
+        record_for_csv["num_ssdp"] = one_record.num_ssdp
 
-        csvrowdata["num_tcp"] = rowdata.num_tcp
-        csvrowdata["num_udp"] = rowdata.num_udp
-        csvrowdata["num_arp"] = rowdata.num_arp
-        csvrowdata["num_igmp"] = rowdata.num_igmp
-        csvrowdata["connection_pairs"] = len(rowdata.IDs)
-        csvrowdata["num_ports"] = len(rowdata.ports)
-        csvrowdata["num_packets"] = rowdata.num_packets
+        record_for_csv["num_tcp"] = one_record.num_tcp
+        record_for_csv["num_udp"] = one_record.num_udp
+        record_for_csv["num_arp"] = one_record.num_arp
+        record_for_csv["num_igmp"] = one_record.num_igmp
+        record_for_csv["connection_pairs"] = len(one_record.IDs)
+        record_for_csv["num_ports"] = len(one_record.ports)
+        record_for_csv["num_packets"] = one_record.num_packets
 
-        csvrowdata["window_end_time"] = rowdata.window_end_time
+        record_for_csv["window_end_time"] = one_record.window_end_time
 
-        writer.writerow(csvrowdata)
+        writer.writerow(record_for_csv)
 
     # Reset all the values for this window
-    def resetwindow(self, time_window_end, out_window_index):
+    def reset_window(self, time_window_end, out_window_index):
         cvar = windowcounts(
             time_window_end=time_window_end, out_window_index=out_window_index + 1
         )

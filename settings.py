@@ -21,13 +21,13 @@
 # SOFTWARE.
 
 
-class appsettings:
+class AppSettings:
 
     # sliding window size
     time_window = 5000  # msec
 
     # when streaming - how long to run in seconds
-    howlong = 120
+    how_long = 120
 
     # live capture network interface
     interface = "eth0"

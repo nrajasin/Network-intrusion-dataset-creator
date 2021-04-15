@@ -21,7 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from settings import appsettings
+from settings import AppSettings
 from detectors import *
 from services import *
 from counts import *
@@ -31,7 +31,7 @@ import argparse
 
 def main():
     # load the settings
-    settings = appsettings()
+    settings = AppSettings()
 
     parser = argparse.ArgumentParser(
         description="Create time window statistics for pcap stream or file"
@@ -53,8 +53,8 @@ def main():
     parser.add_argument(
         "-l",
         "--howlong",
-        default=settings.howlong,
-        help="number of seconds to run live mode. [" + str(settings.howlong) + "]",
+        default=settings.how_long,
+        help="number of seconds to run live mode. [" + str(settings.how_long) + "]",
         action="store",
         type=int,
     )
@@ -88,7 +88,7 @@ def main():
     if args.interface:
         settings.interface = args.interface
     if args.howlong:
-        settings.howlong = args.howlong
+        settings.how_long = args.howlong
     if args.outfile:
         settings.output_file_name = args.outfile
     if args.window:
@@ -96,21 +96,21 @@ def main():
     if args.tshark:
         settings.tshark_program = args.tshark
 
-    datacollect = packetcapture(
+    datacollect = PacketCapture(
         1,
         "packet capture data",
         1,
         settings.tshark_program,
         settings.input_file_name,
         settings.interface,
-        settings.howlong,
+        settings.how_long,
     )
     datacollect.start()
 
-    dataprocess = packetanalyze(2, "packet analyzing thread")
+    dataprocess = PacketAnalyse(2, "packet analyzing thread")
     dataprocess.start()
 
-    timecounts = timesandcounts(
+    timecounts = TimesAndCounts(
         4, "time the packets", 1, settings.time_window, settings.output_file_name
     )
     timecounts.start()

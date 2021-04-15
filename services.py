@@ -26,7 +26,7 @@ import queues
 # check the traffic for different services in the traffic suhc as tls,http,smtp
 
 
-class serviceidentify:
+class ServiceIdentity:
     def findServices(self, ID, Data, PacketProtocol):
         FoundServices = []
         if PacketProtocol == "tcp" or PacketProtocol == "udp":

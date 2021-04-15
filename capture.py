@@ -24,6 +24,7 @@ import re
 import threading
 import subprocess
 import json
+import time
 from queue import *
 import queues
 
@@ -31,7 +32,7 @@ import queues
 # args input-file-name, ethernet-interface, how-long
 
 
-class packetcapture(threading.Thread):
+class PacketCapture(threading.Thread):
     def __init__(self, threadID, name, counter, *args):
         threading.Thread.__init__(self)
         self.threadID = threadID
@@ -41,7 +42,7 @@ class packetcapture(threading.Thread):
         self.tshark_program = args[0]
         self.input_file_name = args[1]
         self.interface = args[2]
-        self.howlong = args[3]
+        self.how_long = args[3]
 
     def run(self):
         cmd = "sudo " + self.tshark_program + " -V -i -l -T ek"
@@ -54,10 +55,10 @@ class packetcapture(threading.Thread):
                 + " -V -i "
                 + self.interface
                 + " -a duration:"
-                + str(self.howlong)
+                + str(self.how_long)
                 + " -l -T ek"
             )
-        print("capture.packetcapture: run(): Capturing with: ", cmd)
+        print("capture.PacketCapture: run(): Capturing with: ", cmd)
         p = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
@@ -67,28 +68,38 @@ class packetcapture(threading.Thread):
             universal_newlines=True,
         )
         json_str = ""
+        num_read = 0
+        start_timer = time.perf_counter()
+
         # for line in p.stdout:
         while True:
 
             line = p.stdout.readline()
+            num_read += 1
             if "layers" in line:
-                # print("capture.packetcapture: working with line ", line)
+                # print("capture.PacketCapture: working with line ", line)
                 json_obj = json.loads(line.strip())
                 source_filter = json_obj["layers"]
                 keyval = source_filter.items()
-                # print("capture.packetcapture: working with dict ", line)
+                # print("capture.PacketCapture: working with dict ", line)
                 a = unwrap(keyval)
-                # print("capture.packetcapture: working with packet ", a)
+                # print("capture.PacketCapture: working with packet ", a)
                 send_data(a)
             else:
-                # print("capture.packetcapture: ignoring: ",line)
+                # print("capture.PacketCapture: ignoring: ",line)
                 pass
             if not line and p.poll() is not None:
                 # possible could delay here to let processing complete
-                print("capture.packetcapture: We're done - no input and tshark exited")
+                # print("capture.PacketCapture: We're done - no input and tshark exited")
                 send_data({})
                 break
-        print("capture.packetcapture.run: Exiting thread")
+        end_timer = time.perf_counter()
+        print(
+            "capture.PacketCapture.run: processed:",
+            str(num_read),
+            " rate:",
+            str(num_read / (end_timer - start_timer)),
+        )
         p.stdout.close()
         p.wait()
 

@@ -98,13 +98,13 @@ You can find the original research paper on [researchgate](https://www.researchg
 1. You can see the command line options `python3 main.py --help`
     ```
     $ python3 main.py  --help
-    usage: main.py [-h] [-s SOURCEFILE] [-i INTERFACE] [-l HOWLONG] [-o OUTFILE] [-w WINDOW]
+    usage: main.py [-h] [-s SOURCEFILE] [-i INTERFACE] [-l how_long] [-o OUTFILE] [-w WINDOW]
     Create time window statistics for pcap stream or file
     optional arguments:
     -h,            --help                   show this help message and exit
     -s SOURCEFILE, --sourcefile SOURCEFILE  provide a pcap input file name instead of reading live stream
     -i INTERFACE,  --interface INTERFACE    use an interface. [eth0]
-    -l HOWLONG,    --howlong HOWLONG        number of seconds to run live mode. [120]
+    -l HOWLONG,    --howlong HOWLONG       number of seconds to run live mode. [120]
     -o OUTFILE,    --outfile OUTFILE        change the name of the output file [dataset.csv]
     -w WINDOW,     --window WINDOW          time window in msec [5000]
     -t TSHARK,     --tshark TSHARK          tshark command [tshark]
@@ -112,7 +112,7 @@ You can find the original research paper on [researchgate](https://www.researchg
 1. The default behavior is to work off of live tshark output. You can change this by setting the `--sourcefile` on the command line.
     1. In this mode you will be running wireshark and capturing packets. These will be used to make your own dataset depending on the options you pick. 
 1. The results are stored in a CSV file.  You can override with the `--outfile` command line option
-1. You can set a time to capture the data with the `--howlong <time>` option. The default is stored in `howlong` in `set.py` file. The time is seconds. 
+1. You can set a time to capture the data with the `--howlong <time>` option. The default is stored in `set.py:how_long`. The time is seconds. 
 1. In this mode you can load an existing PCAP and make a dataset in csv format. Specify the path to the input pcap with `--sourcefile <path>` The default is stored in `input_file_path` in `set.py`
 1. The software allows users to define a time window for each aggregation record. Specify the time in _msec_ with the `--window <size>` offering.. TThe default is stored in  `set.py` . The time is in milliseconds. 
 
@@ -135,14 +135,20 @@ sudo tshark  -i eth0 -a duration:120 -w /tmp/foo.pcap -F pcap
 ```
 
 ## Source Code
-The source tree is formatted with _black_ in _Visual Studio Code_
+* The source tree is formatted with _black_ in _Visual Studio Code_
+* The source code is slowly migrating to the pep8 standard https://realpython.com/python-pep8/
+
+## performance
+
+1. Benchmarked on aan i7 Dell E7490
+    1. processed 2400/sec 
+    1. catagorized 200/sec
+1. Analysis times are linear with the number of packets
+    * Tested with ransomware samples from unavarra.es some of which may have originated on other sites.
 
 ## Corner cases and concerns
 
-1. This runs about 300pps on an i7 Dell E7490
 1. IPV6 traffic does not have a `ip.len` field.  This means that the `tcp_ip_length` value in the result set only includes ipv4 traffic.
     * This is true for TCP and UDP
-1. Window analysis times are linear with the number of packets
-    * test with ransomware samples from unavarra.es which came from other sites.
 1. This application has multiple concurrent threads but does not execute as parallel operations due to limitations in Python and the GIL.
 1. NBNS , SMB and SMB2 service counts have not ben vetted. They may be correct or overcount. 
