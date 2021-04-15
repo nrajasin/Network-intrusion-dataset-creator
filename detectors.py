@@ -105,7 +105,8 @@ class packetanalyze (threading.Thread):
             return success
 
         try:
-            if 'tcp.srcport' in Data and (self.generateSrcDstKey(Data['ip.src'], Data['ip.dst']) in dvar.tcp.keys() or self.generateSrcDstKey(Data['ip.dst'], Data['ip.src']) in dvar.tcp.keys()):
+            if 'tcp.srcport' in Data and (self.generateSrcDstKey(Data['ip.src'], Data['ip.dst']) in dvar.tcp.keys() or
+                                          self.generateSrcDstKey(Data['ip.dst'], Data['ip.src']) in dvar.tcp.keys()):
                 try:
                     ky = self.generateSrcDstKey(Data['ip.src'], Data['ip.dst'])
                     temp = dvar.tcp[ky]
@@ -260,24 +261,25 @@ class packetanalyze (threading.Thread):
         success = False
         try:
 
-            if 'arp.src.proto_ipv4' in Data and (self.generateSrcDstKey(Data['arp.src.proto_ipv4'], Data['arp.dst.proto_ipv4']) in dvar.arp.keys() or self.generateSrcDstKey(Data['arp.dst.proto_ipv4'], Data['arp.src.proto_ipv4']) in dvar.arp.keys()):
+            if 'arp.src.proto_ipv4' in Data and (self.generateSrcDstKey(Data['arp.src.proto_ipv4'], Data['arp.dst.proto_ipv4']) in dvar.arp.keys() or
+                                                 self.generateSrcDstKey(Data['arp.dst.proto_ipv4'], Data['arp.src.proto_ipv4']) in dvar.arp.keys()):
                 try:
                     ky = self.generateSrcDstKey(
                         Data['arp.src.proto_ipv4'], Data['arp.dst.proto_ipv4'])
-                    temp = dvar.arp[ky]
+                    status = dvar.arp[ky]
                 except KeyError:
                     ky = self.generateSrcDstKey(
                         Data['arp.dst.proto_ipv4'], Data['arp.src.proto_ipv4'])
-                    temp = dvar.arp[ky]
+                    status = dvar.arp[ky]
 
-                pack_count = temp[len(temp)-1]
+                pack_count = status[len(status)-1]
                 pack_count += 1
+                status.append(Data['arp.src.proto_ipv4'])
+                status.append(Data['arp.dst.proto_ipv4'])
+                status.append(Data['arp.src.hw_mac'])
+                status.append(Data['arp.dst.hw_mac'])
+                status.append(pack_count)
 
-                temp.append(Data['arp.src.proto_ipv4'])
-                temp.append(Data['arp.dst.proto_ipv4'])
-                temp.append(Data['arp.src.hw_mac'])
-                temp.append(Data['arp.dst.hw_mac'])
-                temp.append(pack_count)
                 self.findServicesAndSend(ky, Data, "arp")
 
                 dvar.arp_count += 1
@@ -287,15 +289,12 @@ class packetanalyze (threading.Thread):
                 # print('Tcp connection initiated')
                 status = []
                 pack_count = 1
-                # status.append('ip.src')
                 status.append(Data['arp.src.proto_ipv4'])
-                # status.append('ip.dst')
                 status.append(Data['arp.dst.proto_ipv4'])
-                # status.append('tcp.flags.syn')
                 status.append(Data['arp.src.hw_mac'])
                 status.append(Data['arp.dst.hw_mac'])
-
                 status.append(pack_count)
+
                 dvar.arp[self.generateSrcDstKey(
                     Data['arp.src.proto_ipv4'], Data['arp.dst.proto_ipv4'])] = status
                 self.findServicesAndSend(self.generateSrcDstKey(
