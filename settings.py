@@ -36,5 +36,5 @@ class appsettings():
 
     output_file_name = 'dataset.csv'
 
-    #command to run including path if required
+    # command to run including path if required
     tshark_program = "tshark"

@@ -13,4 +13,3 @@ servicesQ = Queue()
 # services --> counts/times
 global timesQ
 timesQ = Queue()
-
