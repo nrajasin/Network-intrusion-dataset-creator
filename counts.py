@@ -39,7 +39,7 @@ class timesandcounts (threading.Thread):
                   'udp_frame_length', 'udp_ip_length', 'udp_length',
                   'arp_frame_length',
                   'num_tls', 'num_http', 'num_ftp', 'num_ssh', 'num_smtp', 'num_dhcp', 'num_dns',
-                  'num_nbns', 'num_smb', 'num_smb2', 'num_wsdd', 'num_ssdp',
+                  'num_nbns', 'num_smb', 'num_smb2', 'num_pnrp', 'num_wsdd', 'num_ssdp',
                   'num_tcp', 'num_udp', 'num_arp', 'num_igmp',
                   'connection_pairs', 'num_ports', 'num_packets', 'window_end_time']
 
@@ -198,6 +198,8 @@ class timesandcounts (threading.Thread):
             cvar.num_smb += 1
         elif 'smb2' in slist:
             cvar.num_smb2 += 1
+        elif 'pnrp' in slist:
+            cvar.num_pnrp += 1
         elif 'wsdd' in slist:
             cvar.num_wsdd += 1
         elif 'ssdp' in slist:
@@ -205,7 +207,7 @@ class timesandcounts (threading.Thread):
 
     def accumulate_IDs(self, ID, cvar):
         if not ID in cvar.IDs:
-            cvar.IDs.append(ID)
+            cvar.IDs.add(ID)
             # print(cvar.IDs)
 
     # Accumulated for TCP and IP
@@ -213,7 +215,7 @@ class timesandcounts (threading.Thread):
     def accumulate_ports(self, ports, cvar):
         for p in ports:
             if not p in cvar.ports:
-                cvar.ports.append(p)
+                cvar.ports.add(p)
 
     # map cvar to a dictonary to bind to the csv writer
     # Write one time window as a row to the CSV file
@@ -251,6 +253,7 @@ class timesandcounts (threading.Thread):
         csvrowdata['num_nbns'] = rowdata.num_nbns
         csvrowdata['num_smb'] = rowdata.num_smb
         csvrowdata['num_smb2'] = rowdata.num_smb2
+        csvrowdata['num_pnrp'] = rowdata.num_pnrp
         csvrowdata['num_wsdd'] = rowdata.num_wsdd
         csvrowdata['num_ssdp'] = rowdata.num_ssdp
 

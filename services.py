@@ -26,131 +26,98 @@ import queues
 # check the traffic for different services in the traffic suhc as tls,http,smtp
 
 
-class serviceidentify (threading.Thread):
-    def __init__(self, threadID, name):
-        threading.Thread.__init__(self)
-        self.threadID = threadID
-        self.name = name
+class serviceidentify():
 
-    def run(self):
-        print("services.services: run()")
-        service_count = 0
-        while True:
+    def findServices(self, ID, Data, PacketProtocol):
+        FoundServices = []
+        if PacketProtocol == "tcp" or PacketProtocol == "udp":
+            self.tls(Data, FoundServices)
+            self.http(Data, FoundServices)
+            self.ftp(Data, FoundServices)
+            self.ssh(Data, FoundServices)
+            self.dns(Data, FoundServices)
+            self.smtp(Data, FoundServices)
+            self.dhcp(Data, FoundServices)
+            self.nbns(Data, FoundServices)
+            self.smb(Data, FoundServices)
+            self.smb2(Data, FoundServices)
+            self.pnrp(Data, FoundServices)
+            self.wsdd_ssdp(Data, FoundServices)
+            if not FoundServices:
+                #uncomment to see packets not marked as services
+                #print(Data)
+                pass
+        return FoundServices
 
-            if queues.servicesQ.empty() == False:
+    # if more services are needed they can be added in the following template
+    def tls(self, Data, FoundServices):
 
-                Datalist = queues.servicesQ.get()
-                if not Datalist:
-                    print(
-                        "services.serviceidentity.run: We're done - empty dictionary received on queue")
-                    queues.timesQ.put([])
-                    break
-                service_count += 1
-                #print("services invoked ",str(service_count)," times. Notified about ", Datalist[0])
-                ID = Datalist[0]
-                Data = Datalist[1]
-                Prot1 = Datalist[2]
-                found_services = []
-                if Prot1 == "tcp" or Prot1 == "udp":
+        if "tls.record.content_type" in Data:
 
-                    tls(Data, found_services)
-                    http(Data, found_services)
-                    ftp(Data, found_services)
-                    ssh(Data, found_services)
-                    dns(Data, found_services)
-                    smtp(Data, found_services)
-                    dhcp(Data, found_services)
-                    nbns(Data, found_services)
-                    smb(Data, found_services)
-                    smb2(Data, found_services)
-                    wsdd_ssdp(Data, found_services)
+            FoundServices.append("tls")
 
-                # next module expects a 4th element in Datalist
-                if len(found_services) > 0:
-                    Datalist.append(found_services)
-                else:
-                    Datalist.append(["no service"])
-                    # un-comment to see packets that had  no found service -
-                    # falling into here is expected a lot of TCP/UDP don't have services here, ARP for instance
-                    # print(Data)
-                queues.timesQ.put(Datalist)
-        print("services.serviceidentity.run: Exiting thread")
+    def http(self, Data, FoundServices):
 
+        if "http.request.method" in Data:
 
-# if more services are needed they can be added in the following template
-def tls(Data, found_services):
+            FoundServices.append("http")
 
-    if "tls.record.content_type" in Data:
+    # not yet validated
 
-        found_services.append("tls")
+    def ftp(self, Data, FoundServices):
 
+        if "ftp.request" in Data:
+            FoundServices.append("ftp")
 
-def http(Data, found_services):
+    def ssh(self, Data, FoundServices):
 
-    if "http.request.method" in Data:
+        # ssh.message_code?
+        # was ssh.payload
+        if 'ssh.encrypted_packet' in Data:
+            FoundServices.append("ssh")
 
-        found_services.append("http")
+    def dns(self, Data, FoundServices):
 
+        if 'dns.flags' in Data:
+            FoundServices.append("dns")
 
-# not yet validated
-def ftp(Data, found_services):
+    # not yet validated
 
-    if "ftp.request" in Data:
-        found_services.append("ftp")
+    def smtp(self, Data, FoundServices):
+        if 'smtp.response' in Data:
+            FoundServices.append("smtp")
 
+    def dhcp(self, Data, FoundServices):
+        if 'dhcp.type' in Data or 'dhcpv6.msgtype' in Data:
+            FoundServices.append("dhcp")
 
-def ssh(Data, found_services):
+    # we want to count nbns request and responses but not fragments. Is this the right one?
 
-    # ssh.message_code?
-    # was ssh.payload
-    if 'ssh.encrypted_packet' in Data:
-        found_services.append("ssh")
+    def nbns(self, Data, FoundServices):
+        if 'nbns.id' in Data:
+            FoundServices.append("nbns")
 
+    # we want to count smb request and responses but not fragments. Is this the right one?
+    # could subdivide by cmd type
+    def smb(self, Data, FoundServices):
+        if 'smb.cmd' in Data:
+            FoundServices.append("smb")
 
-def dns(Data, found_services):
+    # we want to count smb2 request and responses but not fragments. Is this the right one?
+    # could subdivide by cmd type
+    def smb2(self, Data, FoundServices):
+        if 'smb2.cmd' in Data:
+            FoundServices.append("smb2")
 
-    if 'dns.flags' in Data:
-        found_services.append("dns")
+    def pnrp(self, Data, FoundServices):
+        if 'pnrp.messageType' in Data:
+            FoundServices.append("pnrp")
 
-
-# not yet validated
-def smtp(Data, found_services):
-    if 'smtp.response' in Data:
-        found_services.append("smtp")
-
-
-def dhcp(Data, found_services):
-    if 'dhcp.type' in Data or 'dhcpv6.msgtype' in Data:
-        found_services.append("dhcp")
-
-
-# we want to count nbns request and responses but not fragments. Is this the right one?
-def nbns(Data, found_services):
-    if 'nbns.id' in Data:
-        found_services.append("nbns")
-
-# we want to count smb request and responses but not fragments. Is this the right one?
-# could subdivide by cmd type
-
-
-def smb(Data, found_services):
-    if 'smb.cmd' in Data:
-        found_services.append("smb")
-
-# we want to count smb2 request and responses but not fragments. Is this the right one?
-# could subdivide by cmd type
-
-
-def smb2(Data, found_services):
-    if 'smb2.cmd' in Data:
-        found_services.append("smb2")
-
-# web service dynamic discovery - no obvious tshark hook
-
-
-def wsdd_ssdp(Data, found_services):
-    if (('udp.dst' in Data and Data['udp.dst'] == "239.255.255.250") or ('ipv6.dst' in Data and Data['ipv6.dst'] == "ff02::c")):
-        if 'udp.dstport' in Data and Data['udp.dstport'] == "3702":
-            found_services.append("wsdd")
-        if 'udp.dstport' in Data and Data['udp.dstport'] == "1900":
-            found_services.append("ssdp")
+    # web service dynamic discovery - no obvious tshark hook
+    # wireshark tags ssdp on srcport 1900 without the broadcast
+    def wsdd_ssdp(self, Data, FoundServices):
+        if (('udp.dst' in Data and Data['udp.dst'] == "239.255.255.250") or ('ipv6.dst' in Data and Data['ipv6.dst'] == "ff02::c")):
+            if 'udp.dstport' in Data and Data['udp.dstport'] == "3702":
+                FoundServices.append("wsdd")
+            if 'udp.dstport' in Data and Data['udp.dstport'] == "1900":
+                FoundServices.append("ssdp")

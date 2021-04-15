@@ -48,7 +48,7 @@ class packetanalyze (threading.Thread):
                 if not packetUnderExamination:
                     print(
                         "detectors.packetanalyze.run: We're done - empty dictionary received on queue")
-                    queues.servicesQ.put([])
+                    queues.timesQ.put([])
                     break
                 if self.Tcp(packetUnderExamination, self.dvar) == False:
                     if self.Udp(packetUnderExamination, self.dvar) == False:
@@ -83,20 +83,20 @@ class packetanalyze (threading.Thread):
         return int(ipaddress.IPv6Address(src))+int(ipaddress.IPv6Address(dst))
 
     # we mutate a parameter. oh the horror!
-    def populateBucket(self, ListBucket, Data, pack_count, ipSrcKey, ipDstKey):
-        ListBucket.append(Data[ipSrcKey])
-        ListBucket.append(Data[ipDstKey])
-        ListBucket.append(Data['tcp.flags.res'])
-        ListBucket.append(Data['tcp.flags.ns'])
-        ListBucket.append(Data['tcp.flags.cwr'])
-        ListBucket.append(Data['tcp.flags.ecn'])
-        ListBucket.append(Data['tcp.flags.urg'])
-        ListBucket.append(Data['tcp.flags.ack'])
-        ListBucket.append(Data['tcp.flags.push'])
-        ListBucket.append(Data['tcp.flags.reset'])
-        ListBucket.append(Data['tcp.flags.syn'])
-        ListBucket.append(Data['tcp.flags.fin'])
-        ListBucket.append(pack_count)
+    def populateBucket(self, StatusBucket, Data, pack_count, ipSrcKey, ipDstKey):
+        StatusBucket.append(Data[ipSrcKey])
+        StatusBucket.append(Data[ipDstKey])
+        StatusBucket.append(Data['tcp.flags.res'])
+        StatusBucket.append(Data['tcp.flags.ns'])
+        StatusBucket.append(Data['tcp.flags.cwr'])
+        StatusBucket.append(Data['tcp.flags.ecn'])
+        StatusBucket.append(Data['tcp.flags.urg'])
+        StatusBucket.append(Data['tcp.flags.ack'])
+        StatusBucket.append(Data['tcp.flags.push'])
+        StatusBucket.append(Data['tcp.flags.reset'])
+        StatusBucket.append(Data['tcp.flags.syn'])
+        StatusBucket.append(Data['tcp.flags.fin'])
+        StatusBucket.append(pack_count)
 
     # Picks interested attributes from packets and saves them into a list
     def Tcp(self, Data, dvar):
@@ -117,7 +117,7 @@ class packetanalyze (threading.Thread):
                 # print(pack_count)
                 self.populateBucket(temp, Data, pack_count, 'ip.src', 'ip.dst')
 
-                queues.servicesQ.put([ky, Data, "tcp"])
+                self.findServicesAndSend(ky, Data, "tcp")
                 dvar.tcp[ky] = temp
                 dvar.tcp_count += 1
                 success = True
@@ -129,7 +129,7 @@ class packetanalyze (threading.Thread):
                 self.populateBucket(
                     status, Data, pack_count, 'ip.src', 'ip.dst')
 
-                queues.servicesQ.put([ky, Data, "tcp"])
+                self.findServicesAndSend(ky, Data, "tcp")
                 dvar.tcp[ky] = status
                 dvar.tcp_count += 1
                 success = True
@@ -154,7 +154,7 @@ class packetanalyze (threading.Thread):
                 self.populateBucket(temp, Data, pack_count,
                                     'ipv6.src', 'ipv6.dst')
 
-                queues.servicesQ.put([ky, Data, "tcp"])
+                self.findServicesAndSend(ky, Data, "tcp")
                 dvar.tcp[ky] = temp
                 dvar.tcp_count += 1
                 success = True
@@ -167,7 +167,7 @@ class packetanalyze (threading.Thread):
                 self.populateBucket(status, Data, pack_count,
                                     'ipv6.src', 'ipv6.dst')
 
-                queues.servicesQ.put([ky, Data, "tcp"])
+                self.findServicesAndSend(ky, Data, "tcp")
                 dvar.tcp[ky] = status
                 dvar.tcp_count += 1
                 success = True
@@ -198,7 +198,7 @@ class packetanalyze (threading.Thread):
                     ky = self.generateSrcDstKey(Data['ip.dst'], Data['ip.src'])
                     temp = dvar.udp[ky]
 
-                queues.servicesQ.put([ky, Data, "udp"])
+                self.findServicesAndSend(ky, Data, "udp")
 
                 dvar.udp_count += 1
                 success = True
@@ -213,8 +213,8 @@ class packetanalyze (threading.Thread):
                 status.append(1)
                 dvar.udp[self.generateSrcDstKey(
                     Data['ip.src'], Data['ip.dst'])] = status
-                queues.servicesQ.put([self.generateSrcDstKey(
-                    Data['ip.src'], Data['ip.dst']), Data, "udp"])
+                self.findServicesAndSend(self.generateSrcDstKey(
+                    Data['ip.src'], Data['ip.dst']), Data, "udp")
                 dvar.udp_count += 1
                 success = True
             else:
@@ -234,7 +234,7 @@ class packetanalyze (threading.Thread):
                         Data['ipv6.dst'], Data['ipv6.src'])
                     temp = dvar.udp[ky]
 
-                queues.servicesQ.put([ky, Data, "udp"])
+                self.findServicesAndSend(ky, Data, "udp")
                 dvar.udp_count += 1
                 success = True
             elif 'udp.srcport' in Data:
@@ -246,8 +246,8 @@ class packetanalyze (threading.Thread):
                 status.append(1)
                 dvar.udp[self.generateIPv6SrcDstKey(
                     Data['ipv6.src'], Data['ipv6.dst'])] = status
-                queues.servicesQ.put([self.generateIPv6SrcDstKey(
-                    Data['ipv6.src'], Data['ipv6.dst']), Data, "udp"])
+                self.findServicesAndSend(self.generateIPv6SrcDstKey(
+                    Data['ipv6.src'], Data['ipv6.dst']), Data, "udp")
 
                 dvar.udp_count += 1
                 success = True
@@ -278,7 +278,8 @@ class packetanalyze (threading.Thread):
                 temp.append(Data['arp.src.hw_mac'])
                 temp.append(Data['arp.dst.hw_mac'])
                 temp.append(pack_count)
-                queues.servicesQ.put([ky, Data, "arp"])
+                self.findServicesAndSend(ky, Data, "arp")
+
                 dvar.arp_count += 1
                 success = True
             elif 'arp.src.proto_ipv4' in Data:
@@ -297,8 +298,8 @@ class packetanalyze (threading.Thread):
                 status.append(pack_count)
                 dvar.arp[self.generateSrcDstKey(
                     Data['arp.src.proto_ipv4'], Data['arp.dst.proto_ipv4'])] = status
-                queues.servicesQ.put([self.generateSrcDstKey(
-                    Data['arp.src.proto_ipv4'], Data['arp.dst.proto_ipv4']), Data, "arp"])
+                self.findServicesAndSend(self.generateSrcDstKey(
+                    Data['arp.src.proto_ipv4'], Data['arp.dst.proto_ipv4']), Data, "arp")
                 dvar.arp_count += 1
                 success = True
             else:
@@ -323,16 +324,26 @@ class packetanalyze (threading.Thread):
                 ky = self.generateSrcDstKey(Data['ip.src'], Data['ip.dst'])
                 # I don't know anything about IGMP so just set the pack count to 1 all the time
                 dvar.igmp_count += 1
-                queues.servicesQ.put([ky, Data, "igmp"])
+                self.findServicesAndSend(ky, Data, "igmp")
                 success = True
             elif 'ipv6.src' in Data and 'ipv6.dst' in Data:
                 ky = self.generateIPv6SrcDstKey(
                     Data['ipv6.src'], Data['ipv6.dst'])
                 # I don't know anything about IGMP so just set the pack count to 1 all the time
                 dvar.igmp_count += 1
-                queues.servicesQ.put([ky, Data, "igmp"])
+                self.findServicesAndSend(ky, Data, "igmp")
                 success = True
         except AttributeError:
             print(Data)
             success = False
         return success
+
+    from services import serviceidentify
+    servicesIdentifier = serviceidentify()
+
+    # slightly mixed concerns here - the old version posted to a servicesQ
+    # find any higher level services on top of TCP/UDP and send to sliding window / counter
+    def findServicesAndSend(self, ID, PacketData, PacketProtocol):
+        services = self.servicesIdentifier.findServices(
+            ID, PacketData, PacketProtocol)
+        queues.timesQ.put([ID, PacketData, PacketProtocol, services])

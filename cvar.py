@@ -56,6 +56,7 @@ class windowcounts():
     num_nbns = 0
     num_smb = 0
     num_smb2 = 0
+    num_pnrp = 0
 
     # derived from broadcast address and port
     num_wsdd = 0
@@ -68,9 +69,10 @@ class windowcounts():
     num_arp = 0
     num_igmp = 0
 
-    IDs = []
-
-    ports = []
+    # all the calculated src/dst combinations
+    IDs = set()
+    # all the ports in this window
+    ports = set()
 
     num_packets = 1
 
@@ -78,7 +80,7 @@ class windowcounts():
     # Not sure why but non primitives must be initialized
     def __init__(self, time_window_end=0, out_window_index=1):
         self.num_packets = 1
-        self.IDs = []
-        self.ports = []
+        self.IDs = set()
+        self.ports = set()
         self.window_end_time = time_window_end
         self.out_window_index = out_window_index
