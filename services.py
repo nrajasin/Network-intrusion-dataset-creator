@@ -60,14 +60,16 @@ class serviceidentify (threading.Thread):
                     nbns(Data,found_services)
                     smb(Data, found_services)
                     smb2(Data, found_services)
+                    wsdd_ssdp(Data, found_services)
 
-                    if len(found_services) > 0:
-                        Datalist.append(found_services)
-                    else:
-                        Datalist.append(["no service"])
-                        # un-comment to see packets that had  no found service - 
-                        # falling into here is expected a lot of TCP/UDP don't have services here, ARP for instance
-                        #print(Data)
+                # next module expects a 4th element in Datalist
+                if len(found_services) > 0:
+                    Datalist.append(found_services)
+                else:
+                    Datalist.append(["no service"])
+                    # un-comment to see packets that had  no found service - 
+                    # falling into here is expected a lot of TCP/UDP don't have services here, ARP for instance
+                    #print(Data)
                 queues.timesQ.put(Datalist)
         print("services.serviceidentity.run: Exiting thread")
 
@@ -135,3 +137,12 @@ def smb(Data,found_services):
 def smb2(Data,found_services):
     if 'smb2.cmd' in Data:
         found_services.append("smb2")
+
+# web service dynamic discovery - no obvious tshark hook
+def wsdd_ssdp(Data,found_services):
+    if (('udp.dst' in Data and Data['udp.dst'] == "239.255.255.250") or ('ipv6.dst' in Data and Data['ipv6.dst'] == "ff02::c")):
+        if 'udp.dstport' in Data and Data['udp.dstport'] == "3702" :
+            found_services.append("wsdd")
+        if 'udp.dstport' in Data and Data['udp.dstport'] == "1900" :
+            found_services.append("ssdp")
+

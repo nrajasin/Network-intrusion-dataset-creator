@@ -38,7 +38,7 @@ class timesandcounts (threading.Thread):
                           'udp_frame_length', 'udp_ip_length', 'udp_length', 
                           'arp_frame_length', 
                           'num_tls', 'num_http', 'num_ftp', 'num_ssh', 'num_smtp', 'num_dhcp', 'num_dns', 
-                          'num_nbns', 'num_smb', 'num_smb2',
+                          'num_nbns', 'num_smb', 'num_smb2', 'num_wsdd', 'num_ssdp',
                           'num_tcp', 'num_udp', 'num_arp', 'num_igmp', 
                           'connection_pairs', 'num_ports', 'num_packets', 'window_end_time']
 
@@ -75,7 +75,7 @@ class timesandcounts (threading.Thread):
                     Datalist = queues.timesQ.get()
                     if not Datalist: 
                         break
-                    #print("processing data list: ", Datalist)
+                    #print("counts.times.run: processing data list: ", Datalist)
 
                     ID = Datalist[0]
                     Data = Datalist[1]
@@ -91,10 +91,10 @@ class timesandcounts (threading.Thread):
                     time_window_index, time_window_stop, self.current_time = self.timecheck(Data['frame.time_epoch'], time_window_stop, time_window_index)
 
                     if time_window_index == self.cvar.out_window_index:
-                        #print("add to existing time block")
+                        #print("counts.times.run: add to existing time block")
                         self.cvar.num_packets +=1
                     else: 
-                        #print("in new time block so aggregating and creating new block: ")
+                        #print("counts.times.run: in new time block so aggregating and creating new block: ")
                         self.writewindow(writer,self.cvar)
                         csvfile.flush()
                         # clear variables for the next time window
@@ -189,6 +189,10 @@ class timesandcounts (threading.Thread):
             cvar.num_smb +=1
         elif 'smb2' in slist:
             cvar.num_smb2 +=1
+        elif 'wsdd' in slist:
+            cvar.num_wsdd +=1
+        elif 'ssdp' in slist:
+            cvar.num_ssdp +=1
 
 
     def accumulate_IDs(self, ID, cvar):
@@ -239,6 +243,8 @@ class timesandcounts (threading.Thread):
         csvrowdata['num_nbns'] = rowdata.num_nbns
         csvrowdata['num_smb'] = rowdata.num_smb
         csvrowdata['num_smb2'] = rowdata.num_smb2
+        csvrowdata['num_wsdd'] = rowdata.num_wsdd
+        csvrowdata['num_ssdp'] = rowdata.num_ssdp
 
         csvrowdata['num_tcp'] = rowdata.num_tcp
         csvrowdata['num_udp'] = rowdata.num_udp

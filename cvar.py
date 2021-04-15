@@ -57,6 +57,11 @@ class windowcounts():
     num_smb = 0
     num_smb2 = 0
 
+    # derived from broadcast address and port
+    num_wsdd = 0
+    # derived from broadcast address and port
+    num_ssdp = 0
+
     # protocol counts for an individual window
     num_tcp = 0
     num_udp = 0
