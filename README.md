@@ -134,8 +134,12 @@ Try this
 sudo tshark  -i eth0 -a duration:120 -w /tmp/foo.pcap -F pcap
 ```
 
+## Source Code
+The source tree is formatted with _black_ in _Visual Studio Code_
+
 ## Corner cases and concerns
 
+1. This runs about 300pps on an i7 Dell E7490
 1. IPV6 traffic does not have a `ip.len` field.  This means that the `tcp_ip_length` value in the result set only includes ipv4 traffic.
     * This is true for TCP and UDP
 1. Window analysis times are linear with the number of packets

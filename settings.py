@@ -20,7 +20,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-class appsettings():
+
+class appsettings:
 
     # sliding window size
     time_window = 5000  # msec
@@ -34,7 +35,7 @@ class appsettings():
     # setting this to some value tells capture to read from file
     input_file_name = None
 
-    output_file_name = 'dataset.csv'
+    output_file_name = "dataset.csv"
 
     # command to run including path if required
     tshark_program = "tshark"

@@ -32,7 +32,7 @@ import time
 # separate out tcp,udp and arp traffic
 
 
-class packetanalyze (threading.Thread):
+class packetanalyze(threading.Thread):
     def __init__(self, threadID, name):
         threading.Thread.__init__(self)
         self.threadID = threadID
@@ -47,7 +47,8 @@ class packetanalyze (threading.Thread):
                 packetUnderExamination = queues.sharedQ.get()
                 if not packetUnderExamination:
                     print(
-                        "detectors.packetanalyze.run: We're done - empty dictionary received on queue")
+                        "detectors.packetanalyze.run: We're done - empty dictionary received on queue"
+                    )
                     queues.timesQ.put([])
                     break
                 if self.Tcp(packetUnderExamination, self.dvar) == False:
@@ -60,117 +61,144 @@ class packetanalyze (threading.Thread):
                                 # print("Packet was not TCP, UDP, ARP, IGMP proto type:",packetUnderExamination['ip.proto'])
                                 # print(packetUnderExamination)
         end_timer = time.perf_counter()
-        coarse_pps = (self.dvar.tcp_count + self.dvar.udp_count + self.dvar.arp_count +
-                      self.dvar.igmp_count + self.dvar.not_analyzed_count)/(end_timer-start_timer)
-        final_message = ('detectors.packetanalyze.run: '
-                         ' detector pps:', str(coarse_pps),
-                         ' detector tcp_count:', str(self.dvar.tcp_count),
-                         ' detector udp_count:', str(self.dvar.udp_count),
-                         ' detector arp_count:', str(self.dvar.arp_count),
-                         ' detector igmp_count:', str(self.dvar.igmp_count),
-                         ' detector not analyzed:', str(
-                             self.dvar.not_analyzed_count)
-                         )
+        coarse_pps = (
+            self.dvar.tcp_count
+            + self.dvar.udp_count
+            + self.dvar.arp_count
+            + self.dvar.igmp_count
+            + self.dvar.not_analyzed_count
+        ) / (end_timer - start_timer)
+        final_message = (
+            "detectors.packetanalyze.run: " " detector pps:",
+            str(coarse_pps),
+            " detector tcp_count:",
+            str(self.dvar.tcp_count),
+            " detector udp_count:",
+            str(self.dvar.udp_count),
+            " detector arp_count:",
+            str(self.dvar.arp_count),
+            " detector igmp_count:",
+            str(self.dvar.igmp_count),
+            " tcp pairs:",
+            str(len(self.dvar.tcp)),
+            " udp pairs:",
+            str(len(self.dvar.udp)),
+            " detector not analyzed:",
+            str(self.dvar.not_analyzed_count),
+        )
         print(final_message)
         print("detectors.packetanalyze.run: Exiting thread")
 
     # pass in strings that are the ip addresses from the packet
     def generateSrcDstKey(self, src, dst):
-        return int(ipaddress.ip_address(src))+int(ipaddress.ip_address(dst))
+        return int(ipaddress.ip_address(src)) + int(ipaddress.ip_address(dst))
 
     # pass in strings that are the ip addresses from the packet
     def generateIPv6SrcDstKey(self, src, dst):
-        return int(ipaddress.IPv6Address(src))+int(ipaddress.IPv6Address(dst))
+        return int(ipaddress.IPv6Address(src)) + int(ipaddress.IPv6Address(dst))
 
     # we mutate a parameter. oh the horror!
-    def populateBucket(self, StatusBucket, Data, pack_count, ipSrcKey, ipDstKey):
+    def populateTcpBucket(self, StatusBucket, Data, ipSrcKey, ipDstKey):
+        pack_count = 0
+        if StatusBucket:
+            pack_count = StatusBucket[len(StatusBucket) - 1]
+            pack_count += 1
+
         StatusBucket.append(Data[ipSrcKey])
         StatusBucket.append(Data[ipDstKey])
-        StatusBucket.append(Data['tcp.flags.res'])
-        StatusBucket.append(Data['tcp.flags.ns'])
-        StatusBucket.append(Data['tcp.flags.cwr'])
-        StatusBucket.append(Data['tcp.flags.ecn'])
-        StatusBucket.append(Data['tcp.flags.urg'])
-        StatusBucket.append(Data['tcp.flags.ack'])
-        StatusBucket.append(Data['tcp.flags.push'])
-        StatusBucket.append(Data['tcp.flags.reset'])
-        StatusBucket.append(Data['tcp.flags.syn'])
-        StatusBucket.append(Data['tcp.flags.fin'])
+        StatusBucket.append(Data["tcp.flags.res"])
+        StatusBucket.append(Data["tcp.flags.ns"])
+        StatusBucket.append(Data["tcp.flags.cwr"])
+        StatusBucket.append(Data["tcp.flags.ecn"])
+        StatusBucket.append(Data["tcp.flags.urg"])
+        StatusBucket.append(Data["tcp.flags.ack"])
+        StatusBucket.append(Data["tcp.flags.push"])
+        StatusBucket.append(Data["tcp.flags.reset"])
+        StatusBucket.append(Data["tcp.flags.syn"])
+        StatusBucket.append(Data["tcp.flags.fin"])
+
         StatusBucket.append(pack_count)
+        return StatusBucket
+
+    def populateUdpBucket(self, StatusBucket, Data, ipSrcKey, ipDstKey):
+        pack_count = 0
+        if StatusBucket:
+            pack_count = StatusBucket[len(StatusBucket) - 1]
+            pack_count += 1
+
+        StatusBucket.append(Data[ipSrcKey])
+        StatusBucket.append(Data[ipDstKey])
+        StatusBucket.append(Data["udp.srcport"])
+        StatusBucket.append(Data["udp.dstport"])
+        StatusBucket.append(pack_count)
+        return StatusBucket
 
     # Picks interested attributes from packets and saves them into a list
     def Tcp(self, Data, dvar):
         success = False
-        if 'ip.proto' in Data and (Data['ip.proto'] != '6'):
+        if "ip.proto" in Data and (Data["ip.proto"] != "6"):
             return success
 
         try:
-            if 'tcp.srcport' in Data and (self.generateSrcDstKey(Data['ip.src'], Data['ip.dst']) in dvar.tcp.keys() or
-                                          self.generateSrcDstKey(Data['ip.dst'], Data['ip.src']) in dvar.tcp.keys()):
+            if "tcp.srcport" in Data and (
+                self.generateSrcDstKey(Data["ip.src"], Data["ip.dst"])
+                in dvar.tcp.keys()
+                or self.generateSrcDstKey(Data["ip.dst"], Data["ip.src"])
+                in dvar.tcp.keys()
+            ):
                 try:
-                    ky = self.generateSrcDstKey(Data['ip.src'], Data['ip.dst'])
-                    temp = dvar.tcp[ky]
+                    ky = self.generateSrcDstKey(Data["ip.src"], Data["ip.dst"])
+                    status = dvar.tcp[ky]
                 except KeyError:
-                    ky = self.generateSrcDstKey(Data['ip.dst'], Data['ip.src'])
-                    temp = dvar.tcp[ky]
-                pack_count = temp[len(temp)-1]
-                pack_count += 1
+                    ky = self.generateSrcDstKey(Data["ip.dst"], Data["ip.src"])
+                    status = dvar.tcp[ky]
                 # print(pack_count)
-                self.populateBucket(temp, Data, pack_count, 'ip.src', 'ip.dst')
-
-                self.findServicesAndSend(ky, Data, "tcp")
-                dvar.tcp[ky] = temp
-                dvar.tcp_count += 1
-                success = True
-            elif 'ip.src' in Data and 'tcp.flags.syn' in Data:
-
-                ky = self.generateSrcDstKey(Data['ip.src'], Data['ip.dst'])
-                status = []
-                pack_count = 1
-                self.populateBucket(
-                    status, Data, pack_count, 'ip.src', 'ip.dst')
-
-                self.findServicesAndSend(ky, Data, "tcp")
+                status = self.populateTcpBucket(status, Data, "ip.src", "ip.dst")
                 dvar.tcp[ky] = status
                 dvar.tcp_count += 1
+
+                self.findServicesAndSend(ky, Data, "tcp")
+                success = True
+            elif "ip.src" in Data and "tcp.flags.syn" in Data:
+
+                ky = self.generateSrcDstKey(Data["ip.src"], Data["ip.dst"])
+                status = self.populateTcpBucket([], Data, "ip.src", "ip.dst")
+                dvar.tcp[ky] = status
+                dvar.tcp_count += 1
+
+                self.findServicesAndSend(ky, Data, "tcp")
                 success = True
             else:
                 success = False
         except KeyError:
-            if 'tcp.srcport' in Data and (
-                    self.generateIPv6SrcDstKey(Data['ipv6.src'], Data['ipv6.dst']) in dvar.tcp.keys() or
-                    self.generateIPv6SrcDstKey(Data['ipv6.dst'], Data['ipv6.src']) in dvar.tcp.keys()):
+            if "tcp.srcport" in Data and (
+                self.generateIPv6SrcDstKey(Data["ipv6.src"], Data["ipv6.dst"])
+                in dvar.tcp.keys()
+                or self.generateIPv6SrcDstKey(Data["ipv6.dst"], Data["ipv6.src"])
+                in dvar.tcp.keys()
+            ):
 
                 try:
-                    ky = self.generateIPv6SrcDstKey(
-                        Data['ipv6.src'], Data['ipv6.dst'])
-                    temp = dvar.tcp[ky]
+                    ky = self.generateIPv6SrcDstKey(Data["ipv6.src"], Data["ipv6.dst"])
+                    status = dvar.tcp[ky]
                 except KeyError:
-                    ky = self.generateIPv6SrcDstKey(
-                        Data['ipv6.dst'], Data['ipv6.src'])
-                    temp = dvar.tcp[ky]
-                pack_count = temp[len(temp)-1]
-                pack_count += 1
+                    ky = self.generateIPv6SrcDstKey(Data["ipv6.dst"], Data["ipv6.src"])
+                    status = dvar.tcp[ky]
                 # print(pack_count)
-                self.populateBucket(temp, Data, pack_count,
-                                    'ipv6.src', 'ipv6.dst')
-
-                self.findServicesAndSend(ky, Data, "tcp")
-                dvar.tcp[ky] = temp
-                dvar.tcp_count += 1
-                success = True
-            elif 'ipv6.src' in Data and 'tcp.flags.syn' in Data:
-
-                ky = self.generateIPv6SrcDstKey(
-                    Data['ipv6.src'], Data['ipv6.dst'])
-                status = []
-                pack_count = 1
-                self.populateBucket(status, Data, pack_count,
-                                    'ipv6.src', 'ipv6.dst')
-
-                self.findServicesAndSend(ky, Data, "tcp")
+                status = self.populateTcpBucket(status, Data, "ipv6.src", "ipv6.dst")
                 dvar.tcp[ky] = status
                 dvar.tcp_count += 1
+
+                self.findServicesAndSend(ky, Data, "tcp")
+                success = True
+            elif "ipv6.src" in Data and "tcp.flags.syn" in Data:
+
+                ky = self.generateIPv6SrcDstKey(Data["ipv6.src"], Data["ipv6.dst"])
+                status = self.populateTcpBucket([], Data, "ipv6.src", "ipv6.dst")
+                dvar.tcp[ky] = status
+                dvar.tcp_count += 1
+
+                self.findServicesAndSend(ky, Data, "tcp")
                 success = True
             else:
                 success = False
@@ -181,76 +209,70 @@ class packetanalyze (threading.Thread):
 
     def Udp(self, Data, dvar):
         success = False
-        if 'ip.proto' in Data and (Data['ip.proto'] != '17'):
+        if "ip.proto" in Data and (Data["ip.proto"] != "17"):
             return success
 
         try:
 
-            if 'udp.srcport' in Data and (
-                    self.generateSrcDstKey(
-                        Data['ip.src'], Data['ip.dst']) in dvar.udp.keys()
-                    or
-                    self.generateSrcDstKey(Data['ip.dst'], Data['ip.src']) in dvar.udp.keys()):
+            if "udp.srcport" in Data and (
+                self.generateSrcDstKey(Data["ip.src"], Data["ip.dst"])
+                in dvar.udp.keys()
+                or self.generateSrcDstKey(Data["ip.dst"], Data["ip.src"])
+                in dvar.udp.keys()
+            ):
 
                 try:
-                    ky = self.generateSrcDstKey(Data['ip.src'], Data['ip.dst'])
-                    temp = dvar.udp[ky]
+                    ky = self.generateSrcDstKey(Data["ip.src"], Data["ip.dst"])
+                    status = dvar.udp[ky]
                 except KeyError:
-                    ky = self.generateSrcDstKey(Data['ip.dst'], Data['ip.src'])
-                    temp = dvar.udp[ky]
+                    ky = self.generateSrcDstKey(Data["ip.dst"], Data["ip.src"])
+                    status = dvar.status[ky]
+                status = self.populateUdpBucket(status, Data, "ip.src", "ip.dst")
+                dvar.udp[ky] = status
+                dvar.udp_count += 1
 
                 self.findServicesAndSend(ky, Data, "udp")
-
-                dvar.udp_count += 1
                 success = True
-            elif 'udp.srcport' in Data:
+            elif "udp.srcport" in Data:
 
-                status = []
-                # status.append(Data)
-                status.append(Data['ip.src'])
-                status.append(Data['ip.dst'])
-                status.append(Data['udp.srcport'])
-                status.append(Data['udp.dstport'])
-                status.append(1)
-                dvar.udp[self.generateSrcDstKey(
-                    Data['ip.src'], Data['ip.dst'])] = status
-                self.findServicesAndSend(self.generateSrcDstKey(
-                    Data['ip.src'], Data['ip.dst']), Data, "udp")
+                ky = self.generateSrcDstKey(Data["ip.src"], Data["ip.dst"])
+                status = self.populateUdpBucket([], Data, "ip.src", "ip.dst")
+                dvar.udp[ky] = status
                 dvar.udp_count += 1
+
+                self.findServicesAndSend(ky, Data, "udp")
                 success = True
             else:
                 success = False
         except KeyError:
 
-            if 'udp.srcport' in Data and (
-                    self.generateIPv6SrcDstKey(Data['ipv6.src'], Data['ipv6.dst']) in dvar.udp.keys() or
-                    self.generateIPv6SrcDstKey(Data['ipv6.dst'], Data['ipv6.src']) in dvar.udp.keys()):
+            if "udp.srcport" in Data and (
+                self.generateIPv6SrcDstKey(Data["ipv6.src"], Data["ipv6.dst"])
+                in dvar.udp.keys()
+                or self.generateIPv6SrcDstKey(Data["ipv6.dst"], Data["ipv6.src"])
+                in dvar.udp.keys()
+            ):
 
                 try:
-                    ky = self.generateIPv6SrcDstKey(
-                        Data['ipv6.src'], Data['ipv6.dst'])
-                    temp = dvar.udp[ky]
+                    ky = self.generateIPv6SrcDstKey(Data["ipv6.src"], Data["ipv6.dst"])
+                    status = dvar.udp[ky]
                 except KeyError:
-                    ky = self.generateIPv6SrcDstKey(
-                        Data['ipv6.dst'], Data['ipv6.src'])
-                    temp = dvar.udp[ky]
+                    ky = self.generateIPv6SrcDstKey(Data["ipv6.dst"], Data["ipv6.src"])
+                    status = dvar.udp[ky]
+
+                status = self.populateUdpBucket(status, Data, "ipv6.src", "ipv6.dst")
+                dvar.udp[ky] = status
+                dvar.udp_count += 1
 
                 self.findServicesAndSend(ky, Data, "udp")
-                dvar.udp_count += 1
                 success = True
-            elif 'udp.srcport' in Data:
-                status = []
-                status.append(Data['ipv6.src'])
-                status.append(Data['ipv6.dst'])
-                status.append(Data['udp.srcport'])
-                status.append(Data['udp.dstport'])
-                status.append(1)
-                dvar.udp[self.generateIPv6SrcDstKey(
-                    Data['ipv6.src'], Data['ipv6.dst'])] = status
-                self.findServicesAndSend(self.generateIPv6SrcDstKey(
-                    Data['ipv6.src'], Data['ipv6.dst']), Data, "udp")
-
+            elif "udp.srcport" in Data:
+                ky = self.generateIPv6SrcDstKey(Data["ipv6.src"], Data["ipv6.dst"])
+                status = self.populateUdpBucket([], Data, "ipv6.src", "ipv6.dst")
+                dvar.udp[ky] = status
                 dvar.udp_count += 1
+
+                self.findServicesAndSend(ky, Data, "udp")
                 success = True
             else:
                 success = False
@@ -261,45 +283,57 @@ class packetanalyze (threading.Thread):
         success = False
         try:
 
-            if 'arp.src.proto_ipv4' in Data and (self.generateSrcDstKey(Data['arp.src.proto_ipv4'], Data['arp.dst.proto_ipv4']) in dvar.arp.keys() or
-                                                 self.generateSrcDstKey(Data['arp.dst.proto_ipv4'], Data['arp.src.proto_ipv4']) in dvar.arp.keys()):
+            if "arp.src.proto_ipv4" in Data and (
+                self.generateSrcDstKey(
+                    Data["arp.src.proto_ipv4"], Data["arp.dst.proto_ipv4"]
+                )
+                in dvar.arp.keys()
+                or self.generateSrcDstKey(
+                    Data["arp.dst.proto_ipv4"], Data["arp.src.proto_ipv4"]
+                )
+                in dvar.arp.keys()
+            ):
                 try:
                     ky = self.generateSrcDstKey(
-                        Data['arp.src.proto_ipv4'], Data['arp.dst.proto_ipv4'])
+                        Data["arp.src.proto_ipv4"], Data["arp.dst.proto_ipv4"]
+                    )
                     status = dvar.arp[ky]
                 except KeyError:
                     ky = self.generateSrcDstKey(
-                        Data['arp.dst.proto_ipv4'], Data['arp.src.proto_ipv4'])
+                        Data["arp.dst.proto_ipv4"], Data["arp.src.proto_ipv4"]
+                    )
                     status = dvar.arp[ky]
 
-                pack_count = status[len(status)-1]
+                pack_count = status[len(status) - 1]
                 pack_count += 1
-                status.append(Data['arp.src.proto_ipv4'])
-                status.append(Data['arp.dst.proto_ipv4'])
-                status.append(Data['arp.src.hw_mac'])
-                status.append(Data['arp.dst.hw_mac'])
+                status.append(Data["arp.src.proto_ipv4"])
+                status.append(Data["arp.dst.proto_ipv4"])
+                status.append(Data["arp.src.hw_mac"])
+                status.append(Data["arp.dst.hw_mac"])
                 status.append(pack_count)
+                dvar.arp[ky] = status
+                dvar.arp_count += 1
 
                 self.findServicesAndSend(ky, Data, "arp")
-
-                dvar.arp_count += 1
                 success = True
-            elif 'arp.src.proto_ipv4' in Data:
+            elif "arp.src.proto_ipv4" in Data:
+
+                ky = self.generateSrcDstKey(
+                    Data["arp.src.proto_ipv4"], Data["arp.dst.proto_ipv4"]
+                )
 
                 # print('Tcp connection initiated')
                 status = []
                 pack_count = 1
-                status.append(Data['arp.src.proto_ipv4'])
-                status.append(Data['arp.dst.proto_ipv4'])
-                status.append(Data['arp.src.hw_mac'])
-                status.append(Data['arp.dst.hw_mac'])
+                status.append(Data["arp.src.proto_ipv4"])
+                status.append(Data["arp.dst.proto_ipv4"])
+                status.append(Data["arp.src.hw_mac"])
+                status.append(Data["arp.dst.hw_mac"])
                 status.append(pack_count)
-
-                dvar.arp[self.generateSrcDstKey(
-                    Data['arp.src.proto_ipv4'], Data['arp.dst.proto_ipv4'])] = status
-                self.findServicesAndSend(self.generateSrcDstKey(
-                    Data['arp.src.proto_ipv4'], Data['arp.dst.proto_ipv4']), Data, "arp")
+                dvar.arp[ky] = status
                 dvar.arp_count += 1
+
+                self.findServicesAndSend(ky, Data, "arp")
                 success = True
             else:
                 success = False
@@ -314,20 +348,19 @@ class packetanalyze (threading.Thread):
     # ipv6 not tested
     def Igmp(self, Data, dvar):
         success = False
-        if 'ip.proto' in Data and (Data['ip.proto'] != '2'):
+        if "ip.proto" in Data and (Data["ip.proto"] != "2"):
             return success
 
         try:
             # TODO do we count all ip.proto or look for other markers
-            if 'ip.src' in Data and 'ip.dst' in Data:
-                ky = self.generateSrcDstKey(Data['ip.src'], Data['ip.dst'])
+            if "ip.src" in Data and "ip.dst" in Data:
+                ky = self.generateSrcDstKey(Data["ip.src"], Data["ip.dst"])
                 # I don't know anything about IGMP so just set the pack count to 1 all the time
                 dvar.igmp_count += 1
                 self.findServicesAndSend(ky, Data, "igmp")
                 success = True
-            elif 'ipv6.src' in Data and 'ipv6.dst' in Data:
-                ky = self.generateIPv6SrcDstKey(
-                    Data['ipv6.src'], Data['ipv6.dst'])
+            elif "ipv6.src" in Data and "ipv6.dst" in Data:
+                ky = self.generateIPv6SrcDstKey(Data["ipv6.src"], Data["ipv6.dst"])
                 # I don't know anything about IGMP so just set the pack count to 1 all the time
                 dvar.igmp_count += 1
                 self.findServicesAndSend(ky, Data, "igmp")
@@ -338,11 +371,11 @@ class packetanalyze (threading.Thread):
         return success
 
     from services import serviceidentify
+
     servicesIdentifier = serviceidentify()
 
     # slightly mixed concerns here - the old version posted to a servicesQ
     # find any higher level services on top of TCP/UDP and send to sliding window / counter
     def findServicesAndSend(self, ID, PacketData, PacketProtocol):
-        services = self.servicesIdentifier.findServices(
-            ID, PacketData, PacketProtocol)
+        services = self.servicesIdentifier.findServices(ID, PacketData, PacketProtocol)
         queues.timesQ.put([ID, PacketData, PacketProtocol, services])

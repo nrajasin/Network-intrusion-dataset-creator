@@ -21,7 +21,7 @@
 # SOFTWARE.
 
 
-class datasetSummary():
+class datasetSummary:
 
     # counters across all processing across all windows
 

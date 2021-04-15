@@ -31,7 +31,7 @@ import queues
 # args input-file-name, ethernet-interface, how-long
 
 
-class packetcapture (threading.Thread):
+class packetcapture(threading.Thread):
     def __init__(self, threadID, name, counter, *args):
         threading.Thread.__init__(self)
         self.threadID = threadID
@@ -44,33 +44,46 @@ class packetcapture (threading.Thread):
         self.howlong = args[3]
 
     def run(self):
-        cmd = "sudo "+self.tshark_program+" -V -i -l -T ek"
-        if (self.input_file_name is not None):
-            cmd = ""+self.tshark_program+" -V -r " + self.input_file_name + " -T ek"
+        cmd = "sudo " + self.tshark_program + " -V -i -l -T ek"
+        if self.input_file_name is not None:
+            cmd = "" + self.tshark_program + " -V -r " + self.input_file_name + " -T ek"
         else:
-            cmd = "sudo "+self.tshark_program+" -V -i " + self.interface + \
-                " -a duration:" + str(self.howlong) + " -l -T ek"
+            cmd = (
+                "sudo "
+                + self.tshark_program
+                + " -V -i "
+                + self.interface
+                + " -a duration:"
+                + str(self.howlong)
+                + " -l -T ek"
+            )
         print("capture.packetcapture: run(): Capturing with: ", cmd)
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                             bufsize=1, shell=True, universal_newlines=True)
+        p = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            bufsize=1,
+            shell=True,
+            universal_newlines=True,
+        )
         json_str = ""
         # for line in p.stdout:
         while True:
 
             line = p.stdout.readline()
             if "layers" in line:
-                #print("capture.packetcapture: working with line ", line)
+                # print("capture.packetcapture: working with line ", line)
                 json_obj = json.loads(line.strip())
-                source_filter = json_obj['layers']
+                source_filter = json_obj["layers"]
                 keyval = source_filter.items()
-                #print("capture.packetcapture: working with dict ", line)
+                # print("capture.packetcapture: working with dict ", line)
                 a = unwrap(keyval)
-                #print("capture.packetcapture: working with packet ", a)
+                # print("capture.packetcapture: working with packet ", a)
                 send_data(a)
             else:
                 # print("capture.packetcapture: ignoring: ",line)
                 pass
-            if (not line and p.poll() is not None):
+            if not line and p.poll() is not None:
                 # possible could delay here to let processing complete
                 print("capture.packetcapture: We're done - no input and tshark exited")
                 send_data({})
@@ -82,9 +95,10 @@ class packetcapture (threading.Thread):
 
 # saves each dictionary object into a Queue
 
+
 def send_data(dictionary):
-    #print("sending dictionary size: ", len(dictionary))
-    #print("sending dictionary : ", dictionary)
+    # print("sending dictionary size: ", len(dictionary))
+    # print("sending dictionary : ", dictionary)
     queues.sharedQ.put(dictionary)
 
 
@@ -105,22 +119,24 @@ def unwrap(keyval):
             # couldn't figure out how to convert 'xxx_xxx_' to 'xxx.' so converted 'xxx_xxx_' to 'xxx__' and then 'xxx.'
             # found src_ and dst_ in arp
             # found request_ record_ flags_ inside some keys.  Might want to tighten down record_ can be an inner key
-            massagedKey1 = re.sub(r'(\w+_)(\1)+', r'\1_', key1) \
-                .replace("__", ".") \
-                .replace("request_", "request.") \
-                .replace("record_", "record.") \
-                .replace("flags_", "flags.") \
-                .replace("src_", "src.") \
+            massagedKey1 = (
+                re.sub(r"(\w+_)(\1)+", r"\1_", key1)
+                .replace("__", ".")
+                .replace("request_", "request.")
+                .replace("record_", "record.")
+                .replace("flags_", "flags.")
+                .replace("src_", "src.")
                 .replace("dst_", "dst.")
+            )
             # add the before and after to the map so we don't have to calculate again
             keymap[key1] = massagedKey1
-            #print("registered mapping: ", key1, " --> ",massagedKey1)
+            # print("registered mapping: ", key1, " --> ",massagedKey1)
 
         if isinstance(value1, (str, bool, list)):
             newKeyval[keymap[key1]] = value1
         elif value1 is None:
-            #print("Ignoring and tossing null value", key1)
+            # print("Ignoring and tossing null value", key1)
             pass
         else:
             newKeyval.update(unwrap(value1.items()))
-    return(newKeyval)
+    return newKeyval
