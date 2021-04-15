@@ -141,8 +141,8 @@ sudo tshark  -i eth0 -a duration:120 -w /tmp/foo.pcap -F pcap
 ## performance
 
 1. Benchmarked on aan i7 Dell E7490
-    1. processed 2400/sec 
-    1. catagorized 200/sec
+    1. processed 2400/sec  catagorized 200/sec
+    1. processed 224000 @ 607 tps
 1. Analysis times are linear with the number of packets
     * Tested with ransomware samples from unavarra.es some of which may have originated on other sites.
 
