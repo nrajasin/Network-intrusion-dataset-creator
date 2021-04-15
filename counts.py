@@ -102,7 +102,7 @@ class timesandcounts (threading.Thread):
 
                     self.calculate(ID, Data, Prot1, services, time_window_index, time_window_stop, self.cvar)
             # it is possible that we will get this before all messages have flowed through
-            print("counts.times.run: End of data. total timed packet_count:"+str(pack_count))
+            print("counts.times.run: End of data. total timed packet_count:", str(pack_count))
             csvfile.close()
 
 
@@ -111,7 +111,7 @@ class timesandcounts (threading.Thread):
     def timecheck(self, frame_time_epoch, time_window_stop, time_window_index):
         # this float lh=to the second rh is msec - convert epoch time to msec
         packet_frame_time = int(float(frame_time_epoch)*1000)
-        #print ("packet_frame_time:"+str(packet_frame_time)+" stop:"+str(time_window_stop))
+        #print ("packet_frame_time:",str(packet_frame_time)," stop:",str(time_window_stop))
 
         if packet_frame_time <= time_window_stop:
             # return the same time if still in the window
@@ -124,7 +124,7 @@ class timesandcounts (threading.Thread):
             else: 
                 time_window_start_ceil = time_window_stop
             time_window_stop = time_window_start_ceil + self.time_window
-            #print("counts.timecheck count:"+str(time_window_index)+" stopTime:"+str(time_window_stop))
+            #print("counts.timecheck count:",str(time_window_index)," stopTime:",str(time_window_stop))
 
         return(time_window_index, time_window_stop, packet_frame_time)
 

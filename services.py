@@ -43,7 +43,7 @@ class serviceidentify (threading.Thread):
                     queues.timesQ.put([])
                     break
                 service_count +=1
-                #print("services invoked "+str(service_count)+" times. Notified about ", Datalist[0])
+                #print("services invoked ",str(service_count)," times. Notified about ", Datalist[0])
                 ID = Datalist[0]
                 Data = Datalist[1]
                 Prot1 = Datalist[2]

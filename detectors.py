@@ -61,12 +61,12 @@ class packetanalyze (threading.Thread):
         end_timer = time.perf_counter()
         coarse_pps = (self.dvar.tcp_count + self.dvar.udp_count + self.dvar.arp_count+ self.dvar.igmp_count + self.dvar.not_analyzed_count)/(end_timer-start_timer)
         final_message = ('detectors.packetanalyze.run: '
-            ' detector pps:'+str(coarse_pps)+''
-            ' detector tcp_count:'+str(self.dvar.tcp_count)+''
-            ' detector udp_count:'+str(self.dvar.udp_count)+''
-            ' detector arp_count:'+str(self.dvar.arp_count)+''
-            ' detector igmp_count:'+str(self.dvar.igmp_count)+''
-            ' detector not analyzed:'+str(self.dvar.not_analyzed_count)+''
+            ' detector pps:',str(coarse_pps),
+            ' detector tcp_count:',str(self.dvar.tcp_count),
+            ' detector udp_count:',str(self.dvar.udp_count),
+            ' detector arp_count:',str(self.dvar.arp_count),
+            ' detector igmp_count:',str(self.dvar.igmp_count),
+            ' detector not analyzed:',str(self.dvar.not_analyzed_count)
             )
         print(final_message)
         print("detectors.packetanalyze.run: Exiting thread")
