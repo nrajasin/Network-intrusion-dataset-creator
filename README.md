@@ -142,10 +142,10 @@ sudo tshark  -i eth0 -a duration:120 -w /tmp/foo.pcap -F pcap
 ## performance
 This progam makes use of 4 cores including one for tshark
 
-| Sample  | sample file size | real time | captured packets | analyzed packets | time windows | time span |
-| ------- | ---------------- | --------- | ---------------- | ---------------- | ------------ | ---------------- |
-| Crylock |   143,446,091 b  | real:1:47 user:6:07 sys:1:22   | 247447 @ 2402/sec    | 128778 @ 1201/sec  | 121 | 10:04 
-| Maze    | 1,045,083,415 b  | real:11:21 user:38:38 sys:8:33 | 1,541,965 @ 2260/sec | 770,987 @ 1131/sec | 94 | 7:59
+| Sample  | sample file size | real time |  analyzed packets | time windows | time span |
+| ------- | ---------------- | --------- |  ---------------- | ------------ | ---------------- |
+| Crylock |   143,446,091 b  | real:1:47 user:6:07 sys:1:22   | 128778 @ 1201/sec  | 121 | 10:04 
+| Maze    | 1,045,083,415 b  | real:11:21 user:38:38 sys:8:33 | 770,987 @ 1131/sec | 94 | 7:59
 
 1. Analysis times are linear with the number of packets processed
 1. Tested with ransomware samples from unavarra.es some of which may have originated on other sites.

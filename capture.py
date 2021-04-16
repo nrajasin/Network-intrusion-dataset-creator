@@ -77,8 +77,8 @@ class PacketCapture(multiprocessing.Process):
         while True:
 
             line = p.stdout.readline()
-            num_read += 1
             if "layers" in line:
+                num_read += 1
                 # print("PacketCapture: working with line ", line)
                 json_obj = json.loads(line.strip())
                 source_filter = json_obj["layers"]
@@ -88,6 +88,7 @@ class PacketCapture(multiprocessing.Process):
                 # print("PacketCapture: working with packet ", a)
                 self.send_data(a)
             else:
+                # we get blank lines
                 # print("PacketCapture: ignoring: ",line)
                 pass
             if not line and p.poll() is not None:
