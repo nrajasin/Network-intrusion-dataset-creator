@@ -21,19 +21,21 @@ The resulting _CSV_ file contains one row of packet_dict for each time segment.
 
 ## Sample CSV output
 
-|tcp_frame_length|tcp_ip_length|tcp_length|udp_frame_length|udp_ip_length|udp_length|arp_frame_length|num_tls|num_http|num_ftp|num_ssh|num_smtp|num_dhcp|num_dns|num_nbns|num_smb|num_smb2|num_tcp|num_udp|num_arp|num_igmp|connection_pairs|num_ports|num_packets|window_end_time|
-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|
-|0|0|0|1029|875|655|0|0|0|0|0|0|0|11|0|0|0|0|11|0|0|2|10|12|1573510808578|
-|0|0|0|6049|5475|4655|0|0|0|0|0|0|0|39|2|0|0|0|41|0|0|8|21|41|1573510813698|
-|0|0|0|3909|3629|3229|0|0|0|0|0|0|0|19|1|0|0|0|20|0|0|13|26|20|1573510818748|
-|32231|30504|25544|7365|6791|5971|0|0|0|0|0|0|0|24|9|0|0|118|41|0|2|17|51|161|1573510824230|
-|63847|61047|52339|7187|6669|5929|0|7|0|0|0|0|0|29|8|2|24|194|37|0|0|20|78|231|1573510829288|
-|34814|32988|27128|1537|1411|1231|0|25|0|0|0|0|0|9|0|0|0|126|9|0|0|25|90|135|1573510834299|
-|1120|976|576|4477|3735|2675|0|0|0|0|0|0|0|39|14|0|8|10|53|0|8|28|106|71|1573510839945|
-|8435|7955|6719|4120|3448|2488|0|10|0|0|0|0|0|44|4|0|0|30|48|0|0|34|122|78|1573510845166|
-|386|280|0|8494|7304|5604|0|0|0|0|0|0|0|85|0|0|0|7|85|0|10|43|144|102|1573510850251|
-|0|0|0|7108|6086|4626|0|0|0|0|0|0|0|71|2|0|0|0|73|0|0|48|170|73|1573510855679|
-|42930|40900|35484|2960|2456|1736|0|44|0|0|0|0|0|34|2|0|0|130|36|0|1|55|186|167|1573510860749|
+| tcp_frame_length|tcp_ip_length|tcp_length|udp_frame_length|udp_ip_length|udp_length|arp_frame_length|num_tls|num_http|num_ftp|num_ssh|num_smtp|num_dhcp|num_dns|num_nbns|num_smb|num_smb2|num_pnrp|num_wsdd|num_ssdp|num_tcp|num_udp|num_arp|num_igmp|connection_pairs|num_ports|num_packets|window_end_time |
+| -|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|--|-|-|-|-|-|- |
+| 0|0|0|2006|1084|1118|210|0|2|0|0|0|0|16|4|0|0|0|0|0|0|22|5|18|8|14|46|14806 |
+| 0|0|0|3479|2699|2487|0|0|5|0|0|0|0|6|15|2|0|0|0|0|0|28|0|6|4|8|34|19806 | 
+| 0|0|0|16524|2781|14822|0|0|17|0|0|0|3|4|0|1|0|0|6|0|0|33|0|9|5|13|42|24806 |
+| 0|0|0|9798|1810|8636|84|0|18|0|0|0|5|0|0|0|0|0|0|0|0|23|2|2|5|7|27|29806 | 
+| 0|0|0|16843|5915|15239|420|0|10|0|0|0|0|12|4|0|0|0|6|0|0|36|10|20|10|14|66|34806 | 
+| 0|0|0|14842|7344|12918|168|0|33|0|0|0|1|10|2|0|0|0|0|0|0|46|4|6|8|12|56|39806 | 
+| 0|0|0|8476|4324|7168|0|0|22|0|0|0|0|2|8|0|0|0|0|0|0|32|0|0|4|7|32|44806 | 
+| 0|0|0|5126|2956|4244|0|0|5|0|0|0|0|6|6|2|0|0|2|0|0|23|0|0|4|11|23|49806 | 
+| 0|0|0|2602|1535|1924|210|0|6|0|0|0|1|2|4|4|0|0|0|0|0|17|5|0|6|10|22|54806 | 
+| 0|0|0|4914|2800|4168|84|0|6|0|0|0|0|3|3|3|0|0|2|0|0|19|2|0|5|12|21|59806 | 
+| 6857|6615|6111|18677|9873|16171|504|0|16|0|0|0|7|21|2|4|0|2|4|0|13|59|12|21|16|33|105|64806 |
+| 6929|6747|6203|34439|17134|29359|420|0|31|0|0|0|5|23|30|2|0|15|6|0|13|120|10|24|15|36|167|69806 | 
+| 29150|14857|26074|15555|8969|12973|0|0|17|0|0|0|0|13|17|4|0|5|2|0|46|63|0|4|11|24|113|74806 | 
 
 ## Attribution
 If you are using this for research purposes please cite the publication listed below. The bibtex is as follows. 
@@ -140,13 +142,13 @@ sudo tshark  -i eth0 -a duration:120 -w /tmp/foo.pcap -F pcap
 ## performance
 This progam makes use of 4 cores including one for tshark
 
-1. Benchmarked on an i7 Dell E7490 quad core running at 85% CPU 
-    1. Crylock.... 143,446,091 bytes
-    1. captured 247447 packets at rate 2402/sec
-    1. service analyze 128778 at rate of 1201/sec
-    1. real time 1:47.269 user time 6:07.446 sys time 1:22.843
-1. Analysis times are linear with the number of packets
-    * Tested with ransomware samples from unavarra.es some of which may have originated on other sites.
+| Sample  | sample file size | real time | captured packets | analyzed packets | time windows | time span |
+| ------- | ---------------- | --------- | ---------------- | ---------------- | ------------ | ---------------- |
+| Crylock |   143,446,091 b  | real:1:47 user:6:07 sys:1:22   | 247447 @ 2402/sec    | 128778 @ 1201/sec  | 121 | 10:04 
+| Maze    | 1,045,083,415 b  | real:11:21 user:38:38 sys:8:33 | 1,541,965 @ 2260/sec | 770,987 @ 1131/sec | 94 | 7:59
+
+1. Analysis times are linear with the number of packets processed
+1. Tested with ransomware samples from unavarra.es some of which may have originated on other sites.
 
 ## Corner cases and concerns
 
