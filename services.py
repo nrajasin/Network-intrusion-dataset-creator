@@ -27,98 +27,98 @@ import queues
 
 
 class ServiceIdentity:
-    def findServices(self, ID, Data, PacketProtocol):
-        FoundServices = []
+    def findServices(self, ID, packet_dict, PacketProtocol):
+        FoundServices = set()
         if PacketProtocol == "tcp" or PacketProtocol == "udp":
-            self.tls(Data, FoundServices)
-            self.http(Data, FoundServices)
-            self.ftp(Data, FoundServices)
-            self.ssh(Data, FoundServices)
-            self.dns(Data, FoundServices)
-            self.smtp(Data, FoundServices)
-            self.dhcp(Data, FoundServices)
-            self.nbns(Data, FoundServices)
-            self.smb(Data, FoundServices)
-            self.smb2(Data, FoundServices)
-            self.pnrp(Data, FoundServices)
-            self.wsdd_ssdp(Data, FoundServices)
+            self.tls(packet_dict, FoundServices)
+            self.http(packet_dict, FoundServices)
+            self.ftp(packet_dict, FoundServices)
+            self.ssh(packet_dict, FoundServices)
+            self.dns(packet_dict, FoundServices)
+            self.smtp(packet_dict, FoundServices)
+            self.dhcp(packet_dict, FoundServices)
+            self.nbns(packet_dict, FoundServices)
+            self.smb(packet_dict, FoundServices)
+            self.smb2(packet_dict, FoundServices)
+            self.pnrp(packet_dict, FoundServices)
+            self.wsdd_ssdp(packet_dict, FoundServices)
             if not FoundServices:
                 # uncomment to see packets not marked as services
-                # print(Data)
+                # print("ServiceIdentity ",packet_dict)
                 pass
         return FoundServices
 
     # if more services are needed they can be added in the following template
-    def tls(self, Data, FoundServices):
+    def tls(self, packet_dict, FoundServices):
 
-        if "tls.record.content_type" in Data:
+        if "tls.record.content_type" in packet_dict:
 
-            FoundServices.append("tls")
+            FoundServices.add("tls")
 
-    def http(self, Data, FoundServices):
+    def http(self, packet_dict, FoundServices):
 
-        if "http.request.method" in Data:
+        if "http.request.method" in packet_dict:
 
-            FoundServices.append("http")
+            FoundServices.add("http")
 
     # not yet validated
 
-    def ftp(self, Data, FoundServices):
+    def ftp(self, packet_dict, FoundServices):
 
-        if "ftp.request" in Data:
-            FoundServices.append("ftp")
+        if "ftp.request" in packet_dict:
+            FoundServices.add("ftp")
 
-    def ssh(self, Data, FoundServices):
+    def ssh(self, packet_dict, FoundServices):
 
         # ssh.message_code?
         # was ssh.payload
-        if "ssh.encrypted_packet" in Data:
-            FoundServices.append("ssh")
+        if "ssh.encrypted_packet" in packet_dict:
+            FoundServices.add("ssh")
 
-    def dns(self, Data, FoundServices):
+    def dns(self, packet_dict, FoundServices):
 
-        if "dns.flags" in Data:
-            FoundServices.append("dns")
+        if "dns.flags" in packet_dict:
+            FoundServices.add("dns")
 
     # not yet validated
 
-    def smtp(self, Data, FoundServices):
-        if "smtp.response" in Data:
-            FoundServices.append("smtp")
+    def smtp(self, packet_dict, FoundServices):
+        if "smtp.response" in packet_dict:
+            FoundServices.add("smtp")
 
-    def dhcp(self, Data, FoundServices):
-        if "dhcp.type" in Data or "dhcpv6.msgtype" in Data:
-            FoundServices.append("dhcp")
+    def dhcp(self, packet_dict, FoundServices):
+        if "dhcp.type" in packet_dict or "dhcpv6.msgtype" in packet_dict:
+            FoundServices.add("dhcp")
 
     # we want to count nbns request and responses but not fragments. Is this the right one?
 
-    def nbns(self, Data, FoundServices):
-        if "nbns.id" in Data:
-            FoundServices.append("nbns")
+    def nbns(self, packet_dict, FoundServices):
+        if "nbns.id" in packet_dict:
+            FoundServices.add("nbns")
 
     # we want to count smb request and responses but not fragments. Is this the right one?
     # could subdivide by cmd type
-    def smb(self, Data, FoundServices):
-        if "smb.cmd" in Data:
-            FoundServices.append("smb")
+    def smb(self, packet_dict, FoundServices):
+        if "smb.cmd" in packet_dict:
+            FoundServices.add("smb")
 
     # we want to count smb2 request and responses but not fragments. Is this the right one?
     # could subdivide by cmd type
-    def smb2(self, Data, FoundServices):
-        if "smb2.cmd" in Data:
-            FoundServices.append("smb2")
+    def smb2(self, packet_dict, FoundServices):
+        if "smb2.cmd" in packet_dict:
+            FoundServices.add("smb2")
 
-    def pnrp(self, Data, FoundServices):
-        if "pnrp.messageType" in Data:
-            FoundServices.append("pnrp")
+    def pnrp(self, packet_dict, FoundServices):
+        if "pnrp.messageType" in packet_dict:
+            FoundServices.add("pnrp")
 
     # web service dynamic discovery - no obvious tshark hook
     # wireshark tags ssdp on srcport 1900 without the broadcast
-    def wsdd_ssdp(self, Data, FoundServices):
-        if ("udp.dst" in Data and Data["udp.dst"] == "239.255.255.250") or (
-            "ipv6.dst" in Data and Data["ipv6.dst"] == "ff02::c"
-        ):
-            if "udp.dstport" in Data and Data["udp.dstport"] == "3702":
-                FoundServices.append("wsdd")
-            if "udp.dstport" in Data and Data["udp.dstport"] == "1900":
-                FoundServices.append("ssdp")
+    def wsdd_ssdp(self, packet_dict, FoundServices):
+        if (
+            "udp.dst" in packet_dict and packet_dict["udp.dst"] == "239.255.255.250"
+        ) or ("ipv6.dst" in packet_dict and packet_dict["ipv6.dst"] == "ff02::c"):
+            if "udp.dstport" in packet_dict and packet_dict["udp.dstport"] == "3702":
+                FoundServices.add("wsdd")
+            if "udp.dstport" in packet_dict and packet_dict["udp.dstport"] == "1900":
+                FoundServices.add("ssdp")

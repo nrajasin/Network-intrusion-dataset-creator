@@ -4,12 +4,12 @@ your own dataset or use this to read a PCAP from another source and convert that
 
 ## Theory
 This program accepts a network log, _pcap_, and creates summary statistics using sliding window that moves through the log stream.
-The resulting _CSV_ file contains one row of data for each time segment.
+The resulting _CSV_ file contains one row of packet_dict for each time segment.
 
-### Data Flow 
+### packet_dict Flow 
 | Stage | Python Module  | | Explanation |
 | - | - | -  | - |
-| Ethernet interface _or_ pcap | Python Module| \| | data source |
+| Ethernet interface _or_ pcap | Python Module| \| | packet_dict source |
 | tshark - interface ingest    |              | \| | converts to one line per packet json-sh format |
 |                              | `capture `   | \| | reads from tshark output - massages labels |
 | sharedQ                      |              | \| | communication Queue |
@@ -58,9 +58,9 @@ If you are using this for research purposes please cite the publication listed b
         the IDS. To overcome this challenge, we propose a highly customizable
         software framework capable of generating labeled network intrusion datasets
         on demand. In addition to the capability to customize attributes, it
-        accepts two modes of data input and output. One input method is to collect
-        real-time data by running the software at a chosen network node and the
-        other is to get Raw PCAP files from another data provider. The output can
+        accepts two modes of packet_dict input and output. One input method is to collect
+        real-time packet_dict by running the software at a chosen network node and the
+        other is to get Raw PCAP files from another packet_dict provider. The output can
         be either Raw PCAP with selected attributes per packet or a processed
         dataset with customized attributes related to both individual packet
         features and overall traffic behavior within a time window. The abilities
@@ -112,7 +112,7 @@ You can find the original research paper on [researchgate](https://www.researchg
 1. The default behavior is to work off of live tshark output. You can change this by setting the `--sourcefile` on the command line.
     1. In this mode you will be running wireshark and capturing packets. These will be used to make your own dataset depending on the options you pick. 
 1. The results are stored in a CSV file.  You can override with the `--outfile` command line option
-1. You can set a time to capture the data with the `--howlong <time>` option. The default is stored in `set.py:how_long`. The time is seconds. 
+1. You can set a time to capture the packet_dict with the `--howlong <time>` option. The default is stored in `set.py:how_long`. The time is seconds. 
 1. In this mode you can load an existing PCAP and make a dataset in csv format. Specify the path to the input pcap with `--sourcefile <path>` The default is stored in `input_file_path` in `set.py`
 1. The software allows users to define a time window for each aggregation record. Specify the time in _msec_ with the `--window <size>` offering.. TThe default is stored in  `set.py` . The time is in milliseconds. 
 

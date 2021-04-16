@@ -30,7 +30,7 @@ from datetime import time
 from cvar import windowcounts
 
 # Creates the window counts and writes them to the CSV
-# Divide the data into time windows so that you can get average information for a given time
+# Divide the packet_dict into time windows so that you can get average information for a given time
 
 
 class TimesAndCounts(threading.Thread):
@@ -66,20 +66,19 @@ class TimesAndCounts(threading.Thread):
         "window_end_time",
     ]
 
-    def __init__(self, threadID, name, counter, time_window, *args):
+    def __init__(self, threadID, name, counter, time_window, csv_file_path):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.name = name
-        self.current_time = 0
         self.counter = counter
         self.time_window = time_window
-        self.args = args
-        self.csv_file_path = args[0]
+        self.csv_file_path = csv_file_path
 
         self.cvar = windowcounts()
 
     def run(self):
-        print("counts.times: run()")
+        self.current_time = 0
+        print("TimesAndCounts: run()")
         with open(self.csv_file_path, "w") as csvfile:
 
             writer = csv.DictWriter(csvfile, fieldnames=self.fieldnames, restval="0")
@@ -98,10 +97,10 @@ class TimesAndCounts(threading.Thread):
                     Datalist = queues.timesQ.get()
                     if not Datalist:
                         break
-                    # print("counts.times.run: processing data list: ", Datalist)
+                    # print("TimesAndCounts.run: processing packet_dict list: ", Datalist)
 
                     ID = Datalist[0]
-                    Data = Datalist[1]
+                    packet_dict = Datalist[1]
                     Prot1 = Datalist[2]
                     services = Datalist[3]
 
@@ -113,7 +112,7 @@ class TimesAndCounts(threading.Thread):
                             time_window_stop,
                             self.current_time,
                         ) = self.timecheck(
-                            Data["frame.time_epoch"], 0, time_window_index
+                            packet_dict["frame.time_epoch"], 0, time_window_index
                         )
                         self.cvar.window_end_time = time_window_stop
 
@@ -122,14 +121,16 @@ class TimesAndCounts(threading.Thread):
                         time_window_stop,
                         self.current_time,
                     ) = self.timecheck(
-                        Data["frame.time_epoch"], time_window_stop, time_window_index
+                        packet_dict["frame.time_epoch"],
+                        time_window_stop,
+                        time_window_index,
                     )
 
                     if time_window_index == self.cvar.out_window_index:
-                        # print("counts.times.run: add to existing time block")
+                        # print("TimesAndCounts.run: add to existing time block")
                         self.cvar.num_packets += 1
                     else:
-                        # print("counts.times.run: in new time block so aggregating and creating new block: ")
+                        # print("TimesAndCounts.run: in new time block so aggregating and creating new block: ")
                         self.write_window(writer, self.cvar)
                         csvfile.flush()
                         # clear variables for the next time window
@@ -139,7 +140,7 @@ class TimesAndCounts(threading.Thread):
 
                     self.calculate(
                         ID,
-                        Data,
+                        packet_dict,
                         Prot1,
                         services,
                         time_window_index,
@@ -148,7 +149,7 @@ class TimesAndCounts(threading.Thread):
                     )
             # it is possible that we will get this before all messages have flowed through
             print(
-                "counts.times.run: End of data. total timed packet_count:",
+                "TimesAndCounts.run: End of packet_dict. total timed packet_count:",
                 str(pack_count),
             )
             csvfile.close()
@@ -172,45 +173,62 @@ class TimesAndCounts(threading.Thread):
             else:
                 time_window_start_ceil = time_window_stop
             time_window_stop = time_window_start_ceil + self.time_window
-            # print("counts.timecheck count:",str(time_window_index)," stopTime:",str(time_window_stop))
+            # print("TimesAndCounts.timecheck count:",str(time_window_index)," stopTime:",str(time_window_stop))
 
         return (time_window_index, time_window_stop, packet_frame_time)
 
     def calculate(
-        self, ID, Data, Prot1, services, time_window_index, time_window_stop, cvar
+        self,
+        ID,
+        packet_dict,
+        Prot1,
+        services,
+        time_window_index,
+        time_window_stop,
+        cvar,
     ):
 
-        # print("calculate: ",ID, Prot1, services)
+        # print("TimesAndCounts calculate: ",ID, Prot1, services)
         # Adding or changing attributes
 
         if Prot1 == "tcp":
-            cvar.tcp_frame_length = cvar.tcp_frame_length + int(Data["frame.len"])
+            cvar.tcp_frame_length = cvar.tcp_frame_length + int(
+                packet_dict["frame.len"]
+            )
             try:
-                cvar.tcp_ip_length = cvar.tcp_ip_length + int(Data["ip.len"])
+                cvar.tcp_ip_length = cvar.tcp_ip_length + int(packet_dict["ip.len"])
             except KeyError:  # does not exist in ipv6
                 cvar.tcp_ip_length = cvar.tcp_ip_length + 0
 
-            cvar.tcp_length = cvar.tcp_length + int(Data["tcp.len"])
+            cvar.tcp_length = cvar.tcp_length + int(packet_dict["tcp.len"])
             self.count_services(services, cvar)
             cvar.num_tcp += 1
             self.accumulate_IDs(ID, cvar)
-            self.accumulate_ports([Data["tcp.srcport"], Data["tcp.dstport"]], cvar)
+            self.accumulate_ports(
+                [packet_dict["tcp.srcport"], packet_dict["tcp.dstport"]], cvar
+            )
 
         elif Prot1 == "udp":
-            cvar.udp_frame_length = cvar.udp_frame_length + int(Data["frame.len"])
+            cvar.udp_frame_length = cvar.udp_frame_length + int(
+                packet_dict["frame.len"]
+            )
             try:
-                cvar.udp_ip_length = cvar.udp_ip_length + int(Data["ip.len"])
+                cvar.udp_ip_length = cvar.udp_ip_length + int(packet_dict["ip.len"])
             except KeyError:  # does not exist in ipv6
                 cvar.udp_ip_length = cvar.udp_ip_length + 0
 
-            cvar.udp_length = cvar.udp_length + int(Data["udp.length"])
+            cvar.udp_length = cvar.udp_length + int(packet_dict["udp.length"])
             self.count_services(services, cvar)
             cvar.num_udp += 1
             self.accumulate_IDs(ID, cvar)
-            self.accumulate_ports([Data["udp.srcport"], Data["udp.dstport"]], cvar)
+            self.accumulate_ports(
+                [packet_dict["udp.srcport"], packet_dict["udp.dstport"]], cvar
+            )
 
         elif Prot1 == "arp":
-            cvar.arp_frame_length = cvar.arp_frame_length + int(Data["frame.len"])
+            cvar.arp_frame_length = cvar.arp_frame_length + int(
+                packet_dict["frame.len"]
+            )
             cvar.num_arp += 1
             self.accumulate_IDs(ID, cvar)
         elif Prot1 == "igmp":
@@ -262,7 +280,7 @@ class TimesAndCounts(threading.Thread):
     # Write one time window as a row to the CSV file
     def write_window(self, writer, one_record):
         print(
-            "    counts.times.calculate: Window: ",
+            "    TimesAndCounts.calculate: Window: ",
             one_record.out_window_index,
             "packetCount:",
             one_record.num_packets,

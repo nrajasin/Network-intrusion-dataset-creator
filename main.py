@@ -98,7 +98,7 @@ def main():
 
     datacollect = PacketCapture(
         1,
-        "packet capture data",
+        "packet capture packet_dict",
         1,
         settings.tshark_program,
         settings.input_file_name,

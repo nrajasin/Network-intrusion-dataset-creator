@@ -33,16 +33,25 @@ import queues
 
 
 class PacketCapture(threading.Thread):
-    def __init__(self, threadID, name, counter, *args):
+    def __init__(
+        self,
+        threadID,
+        name,
+        counter,
+        tshark_program,
+        input_file_name,
+        interface,
+        how_long,
+    ):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.name = name
+
         self.counter = counter
-        self.args = args
-        self.tshark_program = args[0]
-        self.input_file_name = args[1]
-        self.interface = args[2]
-        self.how_long = args[3]
+        self.tshark_program = tshark_program
+        self.input_file_name = input_file_name
+        self.interface = interface
+        self.how_long = how_long
 
     def run(self):
         cmd = "sudo " + self.tshark_program + " -V -i -l -T ek"
@@ -58,7 +67,7 @@ class PacketCapture(threading.Thread):
                 + str(self.how_long)
                 + " -l -T ek"
             )
-        print("capture.PacketCapture: run(): Capturing with: ", cmd)
+        print("PacketCapture: run(): Capturing with: ", cmd)
         p = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
@@ -77,25 +86,25 @@ class PacketCapture(threading.Thread):
             line = p.stdout.readline()
             num_read += 1
             if "layers" in line:
-                # print("capture.PacketCapture: working with line ", line)
+                # print("PacketCapture: working with line ", line)
                 json_obj = json.loads(line.strip())
                 source_filter = json_obj["layers"]
                 keyval = source_filter.items()
-                # print("capture.PacketCapture: working with dict ", line)
+                # print("PacketCapture: working with dict ", line)
                 a = unwrap(keyval)
-                # print("capture.PacketCapture: working with packet ", a)
+                # print("PacketCapture: working with packet ", a)
                 send_data(a)
             else:
-                # print("capture.PacketCapture: ignoring: ",line)
+                # print("PacketCapture: ignoring: ",line)
                 pass
             if not line and p.poll() is not None:
                 # possible could delay here to let processing complete
-                # print("capture.PacketCapture: We're done - no input and tshark exited")
+                # print("PacketCapture: We're done - no input and tshark exited")
                 send_data({})
                 break
         end_timer = time.perf_counter()
         print(
-            "capture.PacketCapture.run: processed:",
+            "PacketCapture.run: processed:",
             str(num_read),
             " rate:",
             str(num_read / (end_timer - start_timer)),
@@ -108,8 +117,8 @@ class PacketCapture(threading.Thread):
 
 
 def send_data(dictionary):
-    # print("sending dictionary size: ", len(dictionary))
-    # print("sending dictionary : ", dictionary)
+    # print("PacketCapture: sending dictionary size: ", len(dictionary))
+    # print("PacketCapture: sending dictionary : ", dictionary)
     queues.sharedQ.put(dictionary)
 
 
@@ -141,12 +150,12 @@ def unwrap(keyval):
             )
             # add the before and after to the map so we don't have to calculate again
             keymap[key1] = massagedKey1
-            # print("registered mapping: ", key1, " --> ",massagedKey1)
+            # print("PacketCapture: registered mapping: ", key1, " --> ",massagedKey1)
 
         if isinstance(value1, (str, bool, list)):
             newKeyval[keymap[key1]] = value1
         elif value1 is None:
-            # print("Ignoring and tossing null value", key1)
+            # print("PacketCapture: Ignoring and tossing null value", key1)
             pass
         else:
             newKeyval.update(unwrap(value1.items()))
