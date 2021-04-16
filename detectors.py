@@ -72,8 +72,8 @@ class PacketAnalyse(multiprocessing.Process):
             + self.dvar.not_analyzed_count
         )
         coarse_pps = recognized_count / (end_timer - start_timer)
-        final_message = (
-            "PacketAnalyze.run: ",
+        print(
+            "PacketAnalyze.run:",
             " read=",
             str(recognized_count),
             " pps=",
@@ -93,7 +93,6 @@ class PacketAnalyse(multiprocessing.Process):
             " not_analyzed=",
             str(self.dvar.not_analyzed_count),
         )
-        print(final_message)
         print("PacketAnalyze.run: Exiting thread")
 
     # pass in strings that are the ip addresses from the packet
