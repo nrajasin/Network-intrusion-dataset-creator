@@ -27,6 +27,7 @@ from services import *
 from counts import *
 from capture import *
 import argparse
+import queues
 
 
 def main():
@@ -97,21 +98,25 @@ def main():
         settings.tshark_program = args.tshark
 
     datacollect = PacketCapture(
-        1,
         "packet capture packet_dict",
-        1,
         settings.tshark_program,
         settings.input_file_name,
         settings.interface,
         settings.how_long,
+        queues.sharedQ,
     )
     datacollect.start()
 
-    dataprocess = PacketAnalyse(2, "packet analyzing thread")
+    dataprocess = PacketAnalyse(
+        "packet analyzing thread", queues.sharedQ, queues.timesQ
+    )
     dataprocess.start()
 
     timecounts = TimesAndCounts(
-        4, "time the packets", 1, settings.time_window, settings.output_file_name
+        "time the packets",
+        settings.time_window,
+        settings.output_file_name,
+        queues.timesQ,
     )
     timecounts.start()
 

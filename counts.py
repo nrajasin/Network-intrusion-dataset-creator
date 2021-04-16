@@ -21,7 +21,7 @@
 # SOFTWARE.
 
 
-import threading
+import multiprocessing
 import queues
 import math
 import csv
@@ -33,7 +33,7 @@ from cvar import windowcounts
 # Divide the packet_dict into time windows so that you can get average information for a given time
 
 
-class TimesAndCounts(threading.Thread):
+class TimesAndCounts(multiprocessing.Process):
 
     fieldnames = [
         "tcp_frame_length",
@@ -66,18 +66,17 @@ class TimesAndCounts(threading.Thread):
         "window_end_time",
     ]
 
-    def __init__(self, threadID, name, counter, time_window, csv_file_path):
-        threading.Thread.__init__(self)
-        self.threadID = threadID
+    def __init__(self, name, time_window, csv_file_path, timesQ):
+        multiprocessing.Process.__init__(self)
         self.name = name
-        self.counter = counter
         self.time_window = time_window
         self.csv_file_path = csv_file_path
+        self.timesQ = timesQ
 
         self.cvar = windowcounts()
+        self.current_time = 0
 
     def run(self):
-        self.current_time = 0
         print("TimesAndCounts: run()")
         with open(self.csv_file_path, "w") as csvfile:
 
@@ -91,10 +90,10 @@ class TimesAndCounts(threading.Thread):
 
             while True:
 
-                if not queues.timesQ.empty():
+                if not self.timesQ.empty():
 
                     pack_count += 1
-                    Datalist = queues.timesQ.get()
+                    Datalist = self.timesQ.get()
                     if not Datalist:
                         break
                     # print("TimesAndCounts.run: processing packet_dict list: ", Datalist)

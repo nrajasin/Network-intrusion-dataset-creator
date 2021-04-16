@@ -21,37 +21,30 @@
 # SOFTWARE.
 
 import re
-import threading
+import multiprocessing
 import subprocess
 import json
 import time
-from queue import *
-import queues
+import multiprocessing
 
 # capture packets using wireshark and convert them to python dictionary objects
 # args input-file-name, ethernet-interface, how-long
 
 
-class PacketCapture(threading.Thread):
+class PacketCapture(multiprocessing.Process):
     def __init__(
-        self,
-        threadID,
-        name,
-        counter,
-        tshark_program,
-        input_file_name,
-        interface,
-        how_long,
+        self, name, tshark_program, input_file_name, interface, how_long, sharedQ
     ):
-        threading.Thread.__init__(self)
-        self.threadID = threadID
+        multiprocessing.Process.__init__(self)
         self.name = name
 
-        self.counter = counter
         self.tshark_program = tshark_program
         self.input_file_name = input_file_name
         self.interface = interface
         self.how_long = how_long
+        self.sharedQ = sharedQ
+        # This is a global foo_foo_ to foo. keymap that is shared across all packets
+        self.keymap = {}
 
     def run(self):
         cmd = "sudo " + self.tshark_program + " -V -i -l -T ek"
@@ -91,16 +84,16 @@ class PacketCapture(threading.Thread):
                 source_filter = json_obj["layers"]
                 keyval = source_filter.items()
                 # print("PacketCapture: working with dict ", line)
-                a = unwrap(keyval)
+                a = self.unwrap(keyval)
                 # print("PacketCapture: working with packet ", a)
-                send_data(a)
+                self.send_data(a)
             else:
                 # print("PacketCapture: ignoring: ",line)
                 pass
             if not line and p.poll() is not None:
                 # possible could delay here to let processing complete
                 # print("PacketCapture: We're done - no input and tshark exited")
-                send_data({})
+                self.send_data({})
                 break
         end_timer = time.perf_counter()
         print(
@@ -112,51 +105,44 @@ class PacketCapture(threading.Thread):
         p.stdout.close()
         p.wait()
 
+    # saves each dictionary object into a Queue
 
-# saves each dictionary object into a Queue
+    def send_data(self, dictionary):
+        # print("PacketCapture: sending dictionary size: ", len(dictionary))
+        # print("PacketCapture: sending dictionary : ", dictionary)
+        self.sharedQ.put(dictionary)
 
+    # this function unwraps a multi level JSON object into a python dictionary with key value pairs
 
-def send_data(dictionary):
-    # print("PacketCapture: sending dictionary size: ", len(dictionary))
-    # print("PacketCapture: sending dictionary : ", dictionary)
-    queues.sharedQ.put(dictionary)
+    def unwrap(self, keyval):
 
+        newKeyval = {}
+        for key1, value1 in keyval:
 
-# This is a global foo_foo_ to foo. keymap that is shared across all packets
-keymap = {}
+            if key1 not in self.keymap:
+                # weirdness in the export format when using EK which we use because all on one line
+                # The json has some with xxx.flags xxx.flags_tree xx.flags.yyy the _tree doesn't show up in this format
+                # couldn't figure out how to convert 'xxx_xxx_' to 'xxx.' so converted 'xxx_xxx_' to 'xxx__' and then 'xxx.'
+                # found src_ and dst_ in arp
+                # found request_ record_ flags_ inside some keys.  Might want to tighten down record_ can be an inner key
+                massagedKey1 = (
+                    re.sub(r"(\w+_)(\1)+", r"\1_", key1)
+                    .replace("__", ".")
+                    .replace("request_", "request.")
+                    .replace("record_", "record.")
+                    .replace("flags_", "flags.")
+                    .replace("src_", "src.")
+                    .replace("dst_", "dst.")
+                )
+                # add the before and after to the map so we don't have to calculate again
+                self.keymap[key1] = massagedKey1
+                # print("PacketCapture: registered mapping: ", key1, " --> ",massagedKey1)
 
-# this function unwraps a multi level JSON object into a python dictionary with key value pairs
-
-
-def unwrap(keyval):
-
-    newKeyval = {}
-    for key1, value1 in keyval:
-
-        if key1 not in keymap:
-            # weirdness in the export format when using EK which we use because all on one line
-            # The json has some with xxx.flags xxx.flags_tree xx.flags.yyy the _tree doesn't show up in this format
-            # couldn't figure out how to convert 'xxx_xxx_' to 'xxx.' so converted 'xxx_xxx_' to 'xxx__' and then 'xxx.'
-            # found src_ and dst_ in arp
-            # found request_ record_ flags_ inside some keys.  Might want to tighten down record_ can be an inner key
-            massagedKey1 = (
-                re.sub(r"(\w+_)(\1)+", r"\1_", key1)
-                .replace("__", ".")
-                .replace("request_", "request.")
-                .replace("record_", "record.")
-                .replace("flags_", "flags.")
-                .replace("src_", "src.")
-                .replace("dst_", "dst.")
-            )
-            # add the before and after to the map so we don't have to calculate again
-            keymap[key1] = massagedKey1
-            # print("PacketCapture: registered mapping: ", key1, " --> ",massagedKey1)
-
-        if isinstance(value1, (str, bool, list)):
-            newKeyval[keymap[key1]] = value1
-        elif value1 is None:
-            # print("PacketCapture: Ignoring and tossing null value", key1)
-            pass
-        else:
-            newKeyval.update(unwrap(value1.items()))
-    return newKeyval
+            if isinstance(value1, (str, bool, list)):
+                newKeyval[self.keymap[key1]] = value1
+            elif value1 is None:
+                # print("PacketCapture: Ignoring and tossing null value", key1)
+                pass
+            else:
+                newKeyval.update(self.unwrap(value1.items()))
+        return newKeyval

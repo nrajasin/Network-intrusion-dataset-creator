@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import threading
+import multiprocessing
 import queues
 
 # check the traffic for different services in the traffic suhc as tls,http,smtp

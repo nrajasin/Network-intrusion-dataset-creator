@@ -14,7 +14,6 @@ The resulting _CSV_ file contains one row of packet_dict for each time segment.
 |                              | `capture `   | \| | reads from tshark output - massages labels |
 | sharedQ                      |              | \| | communication Queue |
 |                              | `detectors`  | \| | protocol detectors and protocol statistics |
-| servicesQ                    |              | \| | communication Queue |
 |                              | `services`   | \| | higher level TCP and UDP service counts |
 | timesQ                       |              | \| | communicaton Queue  |
 |                              | `counts`     | \| | time windowing and file writer |
@@ -139,10 +138,13 @@ sudo tshark  -i eth0 -a duration:120 -w /tmp/foo.pcap -F pcap
 * The source code is slowly migrating to the pep8 standard https://realpython.com/python-pep8/
 
 ## performance
+This progam makes use of 4 cores including one for tshark
 
-1. Benchmarked on aan i7 Dell E7490
-    1. processed 2400/sec  catagorized 200/sec
-    1. processed 224000 @ 607 tps
+1. Benchmarked on an i7 Dell E7490 quad core running at 85% CPU 
+    1. Crylock.... 143,446,091 bytes
+    1. captured 247447 packets at rate 2402/sec
+    1. service analyze 128778 at rate of 1201/sec
+    1. real time 1:47.269 user time 6:07.446 sys time 1:22.843
 1. Analysis times are linear with the number of packets
     * Tested with ransomware samples from unavarra.es some of which may have originated on other sites.
 

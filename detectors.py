@@ -23,9 +23,7 @@
 # Protocol detectors
 
 import ipaddress
-import threading
-from queue import *
-import queues
+import multiprocessing
 import time
 from dvar import datasetSummary
 from pairstats import pair_stats_tcp
@@ -35,22 +33,23 @@ from pairstats import pair_stats_arp
 # separate out tcp,udp and arp traffic
 
 
-class PacketAnalyse(threading.Thread):
-    def __init__(self, threadID, name):
-        threading.Thread.__init__(self)
-        self.threadID = threadID
+class PacketAnalyse(multiprocessing.Process):
+    def __init__(self, name, sharedQ, timesQ):
+        multiprocessing.Process.__init__(self)
         self.name = name
+        self.sharedQ = sharedQ
+        self.timesQ = timesQ
+        self.dvar = datasetSummary()
 
     def run(self):
-        self.dvar = datasetSummary()
         start_timer = time.perf_counter()
         print("PacketAnalyze: run()")
         while True:
-            if not queues.sharedQ.empty():
-                thePacket = queues.sharedQ.get()
+            if not self.sharedQ.empty():
+                thePacket = self.sharedQ.get()
                 if not thePacket:
                     # print("PacketAnalyze.run: We're done - empty dictionary received on queue")
-                    queues.timesQ.put([])
+                    self.timesQ.put([])
                     break
                 if not self.find_tcp(thePacket, self.dvar):
                     if not self.find_udp(thePacket, self.dvar):
@@ -419,4 +418,4 @@ class PacketAnalyse(threading.Thread):
     # find any higher level services on top of TCP/UDP and send to sliding window / counter
     def find_svcs_then_send(self, ID, PacketData, PacketProtocol):
         services = self.servicesIdentifier.findServices(ID, PacketData, PacketProtocol)
-        queues.timesQ.put([ID, PacketData, PacketProtocol, services])
+        self.timesQ.put([ID, PacketData, PacketProtocol, services])
