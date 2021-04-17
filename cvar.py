@@ -21,12 +21,14 @@
 # SOFTWARE.
 
 # cvars should only be used from counts.py
+# every property in here should/will end up in the csv output.
 
-class windowcounts():
+
+class windowcounts:
 
     window_end_time = 0
 
-    out_window_index = 1
+    window_index = 1
 
     # frame.len
     tcp_frame_length = 0
@@ -78,9 +80,9 @@ class windowcounts():
 
     # The class "constructor" - It's actually an initializer
     # Not sure why but non primitives must be initialized
-    def __init__(self, time_window_end=0, out_window_index=1):
+    def __init__(self, time_window_end=0, window_index=1):
         self.num_packets = 1
         self.IDs = set()
         self.ports = set()
         self.window_end_time = time_window_end
-        self.out_window_index = out_window_index
+        self.window_index = window_index

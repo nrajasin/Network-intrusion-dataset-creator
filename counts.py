@@ -125,7 +125,7 @@ class TimesAndCounts(multiprocessing.Process):
                         time_window_index,
                     )
 
-                    if time_window_index == self.cvar.out_window_index:
+                    if time_window_index == self.cvar.window_index:
                         # print("TimesAndCounts.run: add to existing time block")
                         self.cvar.num_packets += 1
                     else:
@@ -134,7 +134,7 @@ class TimesAndCounts(multiprocessing.Process):
                         csvfile.flush()
                         # clear variables for the next time window
                         self.cvar = self.reset_window(
-                            time_window_stop, self.cvar.out_window_index
+                            time_window_stop, self.cvar.window_index
                         )
 
                     self.calculate(
@@ -279,7 +279,7 @@ class TimesAndCounts(multiprocessing.Process):
     def write_window(self, writer, one_record):
         print(
             "    TimesAndCounts.calculate: Window: ",
-            one_record.out_window_index,
+            one_record.window_index,
             "packetCount:",
             one_record.num_packets,
             "endTime",
@@ -287,53 +287,57 @@ class TimesAndCounts(multiprocessing.Process):
         )
 
         # this work but leaves unused fields empty instead of with zeros
-        # record_for_csv = one_record.__dict__.copy()
-        # record_for_csv.pop('IDs', None)
-        # record_for_csv.pop('ports', None)
-        # record_for_csv.pop('out_window_index',None)
-        # record_for_csv['connection_pairs'] = len(one_record.IDs)
-        # record_for_csv['num_ports'] = len(one_record.ports)
-
-        record_for_csv = {}
-        record_for_csv["tcp_frame_length"] = one_record.tcp_frame_length
-        record_for_csv["tcp_ip_length"] = one_record.tcp_ip_length
-        record_for_csv["tcp_length"] = one_record.tcp_length
-
-        record_for_csv["udp_frame_length"] = one_record.udp_frame_length
-        record_for_csv["udp_ip_length"] = one_record.udp_ip_length
-        record_for_csv["udp_length"] = one_record.udp_length
-
-        record_for_csv["arp_frame_length"] = one_record.arp_frame_length
-
-        record_for_csv["num_tls"] = one_record.num_tls
-        record_for_csv["num_http"] = one_record.num_http
-        record_for_csv["num_ftp"] = one_record.num_ftp
-        record_for_csv["num_ssh"] = one_record.num_ssh
-        record_for_csv["num_smtp"] = one_record.num_smtp
-        record_for_csv["num_dhcp"] = one_record.num_dhcp
-        record_for_csv["num_dns"] = one_record.num_dns
-        record_for_csv["num_nbns"] = one_record.num_nbns
-        record_for_csv["num_smb"] = one_record.num_smb
-        record_for_csv["num_smb2"] = one_record.num_smb2
-        record_for_csv["num_pnrp"] = one_record.num_pnrp
-        record_for_csv["num_wsdd"] = one_record.num_wsdd
-        record_for_csv["num_ssdp"] = one_record.num_ssdp
-
-        record_for_csv["num_tcp"] = one_record.num_tcp
-        record_for_csv["num_udp"] = one_record.num_udp
-        record_for_csv["num_arp"] = one_record.num_arp
-        record_for_csv["num_igmp"] = one_record.num_igmp
+        # we can tell the csv writer to fill empty cells with zeros
+        record_for_csv = one_record.__dict__.copy()
+        record_for_csv.pop("IDs", None)
+        record_for_csv.pop("ports", None)
+        record_for_csv.pop("window_index", None)
         record_for_csv["connection_pairs"] = len(one_record.IDs)
         record_for_csv["num_ports"] = len(one_record.ports)
-        record_for_csv["num_packets"] = one_record.num_packets
 
-        record_for_csv["window_end_time"] = one_record.window_end_time
+        # record_for_csv = {}
+        # record_for_csv["tcp_frame_length"] = one_record.tcp_frame_length
+        # record_for_csv["tcp_ip_length"] = one_record.tcp_ip_length
+        # record_for_csv["tcp_length"] = one_record.tcp_length
+
+        # record_for_csv["udp_frame_length"] = one_record.udp_frame_length
+        # record_for_csv["udp_ip_length"] = one_record.udp_ip_length
+        # record_for_csv["udp_length"] = one_record.udp_length
+
+        # record_for_csv["arp_frame_length"] = one_record.arp_frame_length
+
+        # record_for_csv["num_tls"] = one_record.num_tls
+        # record_for_csv["num_http"] = one_record.num_http
+        # record_for_csv["num_ftp"] = one_record.num_ftp
+        # record_for_csv["num_ssh"] = one_record.num_ssh
+        # record_for_csv["num_smtp"] = one_record.num_smtp
+        # record_for_csv["num_dhcp"] = one_record.num_dhcp
+        # record_for_csv["num_dns"] = one_record.num_dns
+        # record_for_csv["num_nbns"] = one_record.num_nbns
+        # record_for_csv["num_smb"] = one_record.num_smb
+        # record_for_csv["num_smb2"] = one_record.num_smb2
+        # record_for_csv["num_pnrp"] = one_record.num_pnrp
+        # record_for_csv["num_wsdd"] = one_record.num_wsdd
+        # record_for_csv["num_ssdp"] = one_record.num_ssdp
+
+        # record_for_csv["num_tcp"] = one_record.num_tcp
+        # record_for_csv["num_udp"] = one_record.num_udp
+        # record_for_csv["num_arp"] = one_record.num_arp
+        # record_for_csv["num_igmp"] = one_record.num_igmp
+
+        # # should we provide the connection pairs and ports in the future?
+        # record_for_csv["connection_pairs"] = len(one_record.IDs)
+        # record_for_csv["num_ports"] = len(one_record.ports)
+
+        # record_for_csv["num_packets"] = one_record.num_packets
+
+        # record_for_csv["window_end_time"] = one_record.window_end_time
 
         writer.writerow(record_for_csv)
 
     # Reset all the values for this window
-    def reset_window(self, time_window_end, out_window_index):
+    def reset_window(self, time_window_end, window_index):
         cvar = windowcounts(
-            time_window_end=time_window_end, out_window_index=out_window_index + 1
+            time_window_end=time_window_end, window_index=window_index + 1
         )
         return cvar
