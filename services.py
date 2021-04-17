@@ -54,7 +54,7 @@ class ServiceIdentity(multiprocessing.Process):
                 if found_services:
                     Datalist.append(found_services)
                 else:
-                    Datalist.append(["no service"])
+                    Datalist.append({"no service"})
                 self.outQ.put(Datalist)
         print("services.serviceidentity.run: Exiting thread")
 
