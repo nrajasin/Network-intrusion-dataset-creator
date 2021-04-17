@@ -34,22 +34,22 @@ from pairstats import pair_stats_arp
 
 
 class PacketAnalyse(multiprocessing.Process):
-    def __init__(self, name, sharedQ, timesQ):
+    def __init__(self, name, inQ, outQ):
         multiprocessing.Process.__init__(self)
         self.name = name
-        self.sharedQ = sharedQ
-        self.timesQ = timesQ
+        self.inQ = inQ
+        self.outQ = outQ
         self.dvar = datasetSummary()
 
     def run(self):
         start_timer = time.perf_counter()
         print("PacketAnalyze: run()")
         while True:
-            if not self.sharedQ.empty():
-                thePacket = self.sharedQ.get()
+            if not self.inQ.empty():
+                thePacket = self.inQ.get()
                 if not thePacket:
                     # print("PacketAnalyze.run: We're done - empty dictionary received on queue")
-                    self.timesQ.put([])
+                    self.outQ.put([])
                     break
                 if not self.find_tcp(thePacket, self.dvar):
                     if not self.find_udp(thePacket, self.dvar):
@@ -413,4 +413,4 @@ class PacketAnalyse(multiprocessing.Process):
     # find any higher level services on top of TCP/UDP and send to sliding window / counter
     def find_svcs_then_send(self, ID, PacketData, PacketProtocol):
         services = self.servicesIdentifier.findServices(ID, PacketData, PacketProtocol)
-        self.timesQ.put([ID, PacketData, PacketProtocol, services])
+        self.outQ.put([ID, PacketData, PacketProtocol, services])

@@ -33,7 +33,7 @@ import multiprocessing
 
 class PacketCapture(multiprocessing.Process):
     def __init__(
-        self, name, tshark_program, input_file_name, interface, how_long, sharedQ
+        self, name, tshark_program, input_file_name, interface, how_long, outQ
     ):
         multiprocessing.Process.__init__(self)
         self.name = name
@@ -42,7 +42,7 @@ class PacketCapture(multiprocessing.Process):
         self.input_file_name = input_file_name
         self.interface = interface
         self.how_long = how_long
-        self.sharedQ = sharedQ
+        self.outQ = outQ
         # This is a global foo_foo_ to foo. keymap that is shared across all packets
         self.keymap = {}
 
@@ -111,7 +111,7 @@ class PacketCapture(multiprocessing.Process):
     def send_data(self, dictionary):
         # print("PacketCapture: sending dictionary size: ", len(dictionary))
         # print("PacketCapture: sending dictionary : ", dictionary)
-        self.sharedQ.put(dictionary)
+        self.outQ.put(dictionary)
 
     # this function unwraps a multi level JSON object into a python dictionary with key value pairs
 

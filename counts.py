@@ -66,12 +66,12 @@ class TimesAndCounts(multiprocessing.Process):
         "window_end_time",
     ]
 
-    def __init__(self, name, time_window, csv_file_path, timesQ):
+    def __init__(self, name, time_window, csv_file_path, inQ):
         multiprocessing.Process.__init__(self)
         self.name = name
         self.time_window = time_window
         self.csv_file_path = csv_file_path
-        self.timesQ = timesQ
+        self.inQ = inQ
 
         self.cvar = windowcounts()
         self.current_time = 0
@@ -90,10 +90,10 @@ class TimesAndCounts(multiprocessing.Process):
 
             while True:
 
-                if not self.timesQ.empty():
+                if not self.inQ.empty():
 
                     pack_count += 1
-                    Datalist = self.timesQ.get()
+                    Datalist = self.inQ.get()
                     if not Datalist:
                         break
                     # print("TimesAndCounts.run: processing packet_dict list: ", Datalist)
