@@ -6,7 +6,9 @@ your own dataset or use this to read a PCAP from another source and convert that
 This program accepts a network log, _pcap_, and creates summary statistics using sliding window that moves through the log stream.
 The resulting _CSV_ file contains one row of packet_dict for each time segment.
 
-### packet_dict Flow 
+### packet_dict Flow
+This runs as a multi-processing application with 4 python processes plus tshark
+
 | Stage | Python Module  | | Explanation |
 | - | - | -  | - |
 | Ethernet interface _or_ pcap | Python Module| \| | packet_dict source |
@@ -14,6 +16,7 @@ The resulting _CSV_ file contains one row of packet_dict for each time segment.
 |                              | `capture `   | \| | reads from tshark output - massages labels |
 | sharedQ                      |              | \| | communication Queue |
 |                              | `detectors`  | \| | protocol detectors and protocol statistics |
+| servicesQ                    |              | \| | communicaton Queue  |
 |                              | `services`   | \| | higher level TCP and UDP service counts |
 | timesQ                       |              | \| | communicaton Queue  |
 |                              | `counts`     | \| | time windowing and file writer |
@@ -141,6 +144,9 @@ sudo tshark  -i eth0 -a duration:120 -w /tmp/foo.pcap -F pcap
 
 ## performance
 This progam makes use of 4 cores including one for tshark
+
+This benchmark prior to adding a back the queue between detectors and services.
+That topic degraded performance by 10% on a quad core. It added a 5th process.
 
 | Sample  | sample file size | real time |  analyzed packets | time windows | time span |
 | ------- | ---------------- | --------- |  ---------------- | ------------ | ---------------- |

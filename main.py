@@ -97,7 +97,7 @@ def main():
     if args.tshark:
         settings.tshark_program = args.tshark
 
-    datacollect = PacketCapture(
+    data_collect = PacketCapture(
         "packet capture packet_dict",
         settings.tshark_program,
         settings.input_file_name,
@@ -105,20 +105,25 @@ def main():
         settings.how_long,
         queues.sharedQ,
     )
-    datacollect.start()
+    data_collect.start()
 
-    dataprocess = PacketAnalyse(
-        "packet analyzing thread", queues.sharedQ, queues.timesQ
+    data_process = PacketAnalyse(
+        "packet analyzing thread", queues.sharedQ, queues.serviceQ
     )
-    dataprocess.start()
+    data_process.start()
 
-    timecounts = TimesAndCounts(
+    services_process = ServiceIdentity(
+        "service detecter", queues.serviceQ, queues.timesQ
+    )
+    services_process.start()
+
+    time_counts = TimesAndCounts(
         "time the packets",
         settings.time_window,
         settings.output_file_name,
         queues.timesQ,
     )
-    timecounts.start()
+    time_counts.start()
 
 
 if __name__ == "__main__":

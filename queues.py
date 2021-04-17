@@ -7,6 +7,10 @@ import multiprocessing as mp
 global sharedQ
 sharedQ = mp.Queue()
 
-# detectors/services --> counts/times
+# detectors --> services
+global serviceQ
+serviceQ = mp.Queue()
+
+# services --> counts/times
 global timesQ
 timesQ = mp.Queue()

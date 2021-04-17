@@ -163,27 +163,20 @@ class PacketAnalyse(multiprocessing.Process):
             return success
 
         try:
-            if "tcp.srcport" in packet_dict and (
-                self.gen_src_dst_key(packet_dict["ip.src"], packet_dict["ip.dst"])
+            if (
+                "tcp.srcport" in packet_dict
+                and self.gen_src_dst_key(packet_dict["ip.src"], packet_dict["ip.dst"])
                 in dvar.tcp.keys()
             ):
-                try:
-                    ky = self.gen_src_dst_key(
-                        packet_dict["ip.src"], packet_dict["ip.dst"]
-                    )
-                    status = dvar.tcp[ky]
-                except KeyError:
-                    ky = self.gen_src_dst_key(
-                        packet_dict["ip.dst"], packet_dict["ip.src"]
-                    )
-                    status = dvar.tcp[ky]
+                ky = self.gen_src_dst_key(packet_dict["ip.src"], packet_dict["ip.dst"])
+                status = dvar.tcp[ky]
                 # print("PacketAnalyze ", pack_count)
                 dvar.tcp[ky] = self.gen_tcp_stats(
                     status, packet_dict, "ip.src", "ip.dst"
                 )
                 dvar.tcp_count += 1
 
-                self.find_svcs_then_send(ky, packet_dict, "tcp")
+                self.send(ky, packet_dict, "tcp")
                 success = True
             elif "ip.src" in packet_dict and "tcp.flags.syn" in packet_dict:
 
@@ -193,35 +186,30 @@ class PacketAnalyse(multiprocessing.Process):
                 )
                 dvar.tcp_count += 1
 
-                self.find_svcs_then_send(ky, packet_dict, "tcp")
+                self.send(ky, packet_dict, "tcp")
                 success = True
             else:
                 success = False
         except KeyError:
-            if "tcp.srcport" in packet_dict and (
-                self.gen_ipv6_src_dst_key(
+            if (
+                "tcp.srcport" in packet_dict
+                and self.gen_ipv6_src_dst_key(
                     packet_dict["ipv6.src"], packet_dict["ipv6.dst"]
                 )
                 in dvar.tcp.keys()
             ):
 
-                try:
-                    ky = self.gen_ipv6_src_dst_key(
-                        packet_dict["ipv6.src"], packet_dict["ipv6.dst"]
-                    )
-                    status = dvar.tcp[ky]
-                except KeyError:
-                    ky = self.gen_ipv6_src_dst_key(
-                        packet_dict["ipv6.dst"], packet_dict["ipv6.src"]
-                    )
-                    status = dvar.tcp[ky]
+                ky = self.gen_ipv6_src_dst_key(
+                    packet_dict["ipv6.src"], packet_dict["ipv6.dst"]
+                )
+                status = dvar.tcp[ky]
                 # print("PacketAnalyze ",pack_count)
                 dvar.tcp[ky] = self.gen_tcp_stats(
                     status, packet_dict, "ipv6.src", "ipv6.dst"
                 )
                 dvar.tcp_count += 1
 
-                self.find_svcs_then_send(ky, packet_dict, "tcp")
+                self.send(ky, packet_dict, "tcp")
                 success = True
             elif "ipv6.src" in packet_dict and "tcp.flags.syn" in packet_dict:
 
@@ -233,7 +221,7 @@ class PacketAnalyse(multiprocessing.Process):
                 )
                 dvar.tcp_count += 1
 
-                self.find_svcs_then_send(ky, packet_dict, "tcp")
+                self.send(ky, packet_dict, "tcp")
                 success = True
             else:
                 success = False
@@ -249,27 +237,20 @@ class PacketAnalyse(multiprocessing.Process):
 
         try:
 
-            if "udp.srcport" in packet_dict and (
-                self.gen_src_dst_key(packet_dict["ip.src"], packet_dict["ip.dst"])
+            if (
+                "udp.srcport" in packet_dict
+                and self.gen_src_dst_key(packet_dict["ip.src"], packet_dict["ip.dst"])
                 in dvar.udp.keys()
             ):
 
-                try:
-                    ky = self.gen_src_dst_key(
-                        packet_dict["ip.src"], packet_dict["ip.dst"]
-                    )
-                    status = dvar.udp[ky]
-                except KeyError:
-                    ky = self.gen_src_dst_key(
-                        packet_dict["ip.dst"], packet_dict["ip.src"]
-                    )
-                    status = dvar.status[ky]
+                ky = self.gen_src_dst_key(packet_dict["ip.src"], packet_dict["ip.dst"])
+                status = dvar.udp[ky]
                 dvar.udp[ky] = self.gen_udp_stats(
                     status, packet_dict, "ip.src", "ip.dst"
                 )
                 dvar.udp_count += 1
 
-                self.find_svcs_then_send(ky, packet_dict, "udp")
+                self.send(ky, packet_dict, "udp")
                 success = True
             elif "udp.srcport" in packet_dict:
 
@@ -279,36 +260,31 @@ class PacketAnalyse(multiprocessing.Process):
                 )
                 dvar.udp_count += 1
 
-                self.find_svcs_then_send(ky, packet_dict, "udp")
+                self.send(ky, packet_dict, "udp")
                 success = True
             else:
                 success = False
         except KeyError:
 
-            if "udp.srcport" in packet_dict and (
-                self.gen_ipv6_src_dst_key(
+            if (
+                "udp.srcport" in packet_dict
+                and self.gen_ipv6_src_dst_key(
                     packet_dict["ipv6.src"], packet_dict["ipv6.dst"]
                 )
                 in dvar.udp.keys()
             ):
 
-                try:
-                    ky = self.gen_ipv6_src_dst_key(
-                        packet_dict["ipv6.src"], packet_dict["ipv6.dst"]
-                    )
-                    status = dvar.udp[ky]
-                except KeyError:
-                    ky = self.gen_ipv6_src_dst_key(
-                        packet_dict["ipv6.dst"], packet_dict["ipv6.src"]
-                    )
-                    status = dvar.udp[ky]
+                ky = self.gen_ipv6_src_dst_key(
+                    packet_dict["ipv6.src"], packet_dict["ipv6.dst"]
+                )
+                status = dvar.udp[ky]
 
                 dvar.udp[ky] = self.gen_udp_stats(
                     status, packet_dict, "ipv6.src", "ipv6.dst"
                 )
                 dvar.udp_count += 1
 
-                self.find_svcs_then_send(ky, packet_dict, "udp")
+                self.send(ky, packet_dict, "udp")
                 success = True
             elif "udp.srcport" in packet_dict:
                 ky = self.gen_ipv6_src_dst_key(
@@ -319,7 +295,7 @@ class PacketAnalyse(multiprocessing.Process):
                 )
                 dvar.udp_count += 1
 
-                self.find_svcs_then_send(ky, packet_dict, "udp")
+                self.send(ky, packet_dict, "udp")
                 success = True
             else:
                 success = False
@@ -330,30 +306,24 @@ class PacketAnalyse(multiprocessing.Process):
         success = False
         try:
 
-            if "arp.src.proto_ipv4" in packet_dict and (
-                self.gen_src_dst_key(
-                    packet_dict["arp.src.proto_ipv4"], packet_dict["arp.dst.proto_ipv4"]
+            if (
+                "arp.src.proto_ipv4" in packet_dict
+                and self.gen_src_dst_key(
+                    packet_dict["arp.dst.proto_ipv4"], packet_dict["arp.src.proto_ipv4"]
                 )
                 in dvar.arp.keys()
             ):
-                try:
-                    ky = self.gen_src_dst_key(
-                        packet_dict["arp.src.proto_ipv4"],
-                        packet_dict["arp.dst.proto_ipv4"],
-                    )
-                    status = dvar.arp[ky]
-                except KeyError:
-                    ky = self.gen_src_dst_key(
-                        packet_dict["arp.dst.proto_ipv4"],
-                        packet_dict["arp.src.proto_ipv4"],
-                    )
-                    status = dvar.arp[ky]
+                ky = self.gen_src_dst_key(
+                    packet_dict["arp.src.proto_ipv4"],
+                    packet_dict["arp.dst.proto_ipv4"],
+                )
+                status = dvar.arp[ky]
                 dvar.arp[ky] = self.gen_tcp_stats(
                     status, packet_dict, "arp.src.proto_ipv4", "arp.dst.proto_ipv4"
                 )
                 dvar.arp_count += 1
 
-                self.find_svcs_then_send(ky, packet_dict, "arp")
+                self.send(ky, packet_dict, "arp")
                 success = True
             elif "arp.src.proto_ipv4" in packet_dict:
 
@@ -366,7 +336,7 @@ class PacketAnalyse(multiprocessing.Process):
                 )
                 dvar.arp_count += 1
 
-                self.find_svcs_then_send(ky, packet_dict, "arp")
+                self.send(ky, packet_dict, "arp")
                 success = True
             else:
                 success = False
@@ -390,7 +360,7 @@ class PacketAnalyse(multiprocessing.Process):
                 ky = self.gen_src_dst_key(packet_dict["ip.src"], packet_dict["ip.dst"])
                 # I don't know anything about IGMP so just set the pack count to 1 all the time
                 dvar.igmp_count += 1
-                self.find_svcs_then_send(ky, packet_dict, "igmp")
+                self.send(ky, packet_dict, "igmp")
                 success = True
             elif "ipv6.src" in packet_dict and "ipv6.dst" in packet_dict:
                 ky = self.gen_ipv6_src_dst_key(
@@ -398,7 +368,7 @@ class PacketAnalyse(multiprocessing.Process):
                 )
                 # I don't know anything about IGMP so just set the pack count to 1 all the time
                 dvar.igmp_count += 1
-                self.find_svcs_then_send(ky, packet_dict, "igmp")
+                self.send(ky, packet_dict, "igmp")
                 success = True
         except AttributeError:
             print("PacketAnalyze", packet_dict)
@@ -407,10 +377,5 @@ class PacketAnalyse(multiprocessing.Process):
 
     from services import ServiceIdentity
 
-    servicesIdentifier = ServiceIdentity()
-
-    # slightly mixed concerns here - the old version posted to a servicesQ
-    # find any higher level services on top of TCP/UDP and send to sliding window / counter
-    def find_svcs_then_send(self, ID, PacketData, PacketProtocol):
-        services = self.servicesIdentifier.findServices(ID, PacketData, PacketProtocol)
-        self.outQ.put([ID, PacketData, PacketProtocol, services])
+    def send(self, ID, PacketData, PacketProtocol):
+        self.outQ.put([ID, PacketData, PacketProtocol])
