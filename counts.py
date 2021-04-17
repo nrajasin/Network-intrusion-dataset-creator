@@ -235,7 +235,6 @@ class TimesAndCounts(multiprocessing.Process):
             cvar.num_igmp += 1
 
     def count_services(self, slist, cvar):
-        print(type(slist), slist)
         if "tls" in slist:
             cvar.num_tls += 1
         elif "http" in slist:
