@@ -264,16 +264,15 @@ class TimesAndCounts(multiprocessing.Process):
             cvar.num_ssdp += 1
 
     def accumulate_IDs(self, ID, cvar):
-        if not ID in cvar.IDs:
-            cvar.IDs.add(ID)
-            # print(cvar.IDs)
+        # rely on set semantics
+        cvar.IDs.add(ID)
+        # print(cvar.IDs)
 
     # Accumulated for TCP and IP
 
     def accumulate_ports(self, ports, cvar):
-        for p in ports:
-            if not p in cvar.ports:
-                cvar.ports.add(p)
+        # rely on set symantics
+        cvar.ports.update(ports)
 
     # map cvar to a dictonary to bind to the csv writer
     # Write one time window as a row to the CSV file

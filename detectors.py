@@ -95,13 +95,25 @@ class PacketAnalyse(multiprocessing.Process):
         )
         print("PacketAnalyze.run: Exiting thread")
 
+    # orders the src and dst before hashing
     # pass in strings that are the ip addresses from the packet
     def gen_src_dst_key(self, src, dst):
-        return int(ipaddress.ip_address(src)) + int(ipaddress.ip_address(dst))
+        if src < dst:
+            return str(ipaddress.ip_address(src)) + "-" + str(ipaddress.ip_address(dst))
+        else:
+            return str(ipaddress.ip_address(dst)) + "-" + str(ipaddress.ip_address(src))
 
+    # orders the src and dst before hashing
     # pass in strings that are the ip addresses from the packet
     def gen_ipv6_src_dst_key(self, src, dst):
-        return int(ipaddress.IPv6Address(src)) + int(ipaddress.IPv6Address(dst))
+        if src < dst:
+            return (
+                str(ipaddress.IPv6Address(src)) + "-" + str(ipaddress.IPv6Address(dst))
+            )
+        else:
+            return (
+                str(ipaddress.IPv6Address(dst)) + "-" + str(ipaddress.IPv6Address(src))
+            )
 
     # tcp, ipand arp are separate in case they want to add custom properties like lists of port combos
     # we mutate a parameter. oh the horror!
@@ -154,8 +166,6 @@ class PacketAnalyse(multiprocessing.Process):
             if "tcp.srcport" in packet_dict and (
                 self.gen_src_dst_key(packet_dict["ip.src"], packet_dict["ip.dst"])
                 in dvar.tcp.keys()
-                or self.gen_src_dst_key(packet_dict["ip.dst"], packet_dict["ip.src"])
-                in dvar.tcp.keys()
             ):
                 try:
                     ky = self.gen_src_dst_key(
@@ -191,10 +201,6 @@ class PacketAnalyse(multiprocessing.Process):
             if "tcp.srcport" in packet_dict and (
                 self.gen_ipv6_src_dst_key(
                     packet_dict["ipv6.src"], packet_dict["ipv6.dst"]
-                )
-                in dvar.tcp.keys()
-                or self.gen_ipv6_src_dst_key(
-                    packet_dict["ipv6.dst"], packet_dict["ipv6.src"]
                 )
                 in dvar.tcp.keys()
             ):
@@ -246,8 +252,6 @@ class PacketAnalyse(multiprocessing.Process):
             if "udp.srcport" in packet_dict and (
                 self.gen_src_dst_key(packet_dict["ip.src"], packet_dict["ip.dst"])
                 in dvar.udp.keys()
-                or self.gen_src_dst_key(packet_dict["ip.dst"], packet_dict["ip.src"])
-                in dvar.udp.keys()
             ):
 
                 try:
@@ -284,10 +288,6 @@ class PacketAnalyse(multiprocessing.Process):
             if "udp.srcport" in packet_dict and (
                 self.gen_ipv6_src_dst_key(
                     packet_dict["ipv6.src"], packet_dict["ipv6.dst"]
-                )
-                in dvar.udp.keys()
-                or self.gen_ipv6_src_dst_key(
-                    packet_dict["ipv6.dst"], packet_dict["ipv6.src"]
                 )
                 in dvar.udp.keys()
             ):
@@ -333,10 +333,6 @@ class PacketAnalyse(multiprocessing.Process):
             if "arp.src.proto_ipv4" in packet_dict and (
                 self.gen_src_dst_key(
                     packet_dict["arp.src.proto_ipv4"], packet_dict["arp.dst.proto_ipv4"]
-                )
-                in dvar.arp.keys()
-                or self.gen_src_dst_key(
-                    packet_dict["arp.dst.proto_ipv4"], packet_dict["arp.src.proto_ipv4"]
                 )
                 in dvar.arp.keys()
             ):
