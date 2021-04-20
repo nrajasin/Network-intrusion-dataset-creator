@@ -156,6 +156,15 @@ That topic degraded performance by 10% on a quad core. It added a 5th process.
 1. Analysis times are linear with the number of packets processed
 1. Tested with ransomware samples from unavarra.es some of which may have originated on other sites.
 
+## Zombie processes
+You will end up with one zombie python3 process if you `ctrl-c` the command line you ran this under.
+Run some version of this:
+
+```
+pkill -f tshark
+pkill -f python3
+```
+
 ## Corner cases and concerns
 
 1. IPV6 traffic does not have a `ip.len` field.  This means that the `tcp_ip_length` value in the result set only includes ipv4 traffic.

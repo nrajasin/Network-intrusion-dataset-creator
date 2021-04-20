@@ -234,26 +234,28 @@ class TimesAndCounts(multiprocessing.Process):
             # TODO become more clever about igmp if needed
             cvar.num_igmp += 1
 
+    # an individual packet could be more than one thing.  Some SSDP traffic is HTTP over UDP
+    # should a packet only fit in one bucket?  IF so should put http at the end?
     def count_services(self, slist, cvar):
         if "tls" in slist:
             cvar.num_tls += 1
-        elif "http" in slist:
+        if "http" in slist:
             cvar.num_http += 1
-        elif "ftp" in slist:
+        if "ftp" in slist:
             cvar.num_ftp += 1
-        elif "ssh" in slist:
+        if "ssh" in slist:
             cvar.num_ssh += 1
-        elif "dns" in slist:
+        if "dns" in slist:
             cvar.num_dns += 1
-        elif "smtp" in slist:
+        if "smtp" in slist:
             cvar.num_smtp += 1
-        elif "dhcp" in slist:
+        if "dhcp" in slist:
             cvar.num_dhcp += 1
-        elif "nbns" in slist:
+        if "nbns" in slist:
             cvar.num_nbns += 1
-        elif "smb" in slist:
+        if "smb" in slist:
             cvar.num_smb += 1
-        elif "smb2" in slist:
+        if "smb2" in slist:
             cvar.num_smb2 += 1
         elif "pnrp" in slist:
             cvar.num_pnrp += 1

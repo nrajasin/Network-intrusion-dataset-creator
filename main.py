@@ -105,17 +105,17 @@ def main():
         settings.how_long,
         queues.sharedQ,
     )
-    data_collect.start()
+    data_c_p = data_collect.start()
 
     data_process = PacketAnalyse(
         "packet analyzing thread", queues.sharedQ, queues.serviceQ
     )
-    data_process.start()
+    data_p_p = data_process.start()
 
     services_process = ServiceIdentity(
         "service detecter", queues.serviceQ, queues.timesQ
     )
-    services_process.start()
+    services_p_p = services_process.start()
 
     time_counts = TimesAndCounts(
         "time the packets",
@@ -123,7 +123,16 @@ def main():
         settings.output_file_name,
         queues.timesQ,
     )
-    time_counts.start()
+    time_c_p = time_counts.start()
+
+    try:
+        time_c_p.wait
+    except KeyboardInterrupt:
+        # Without cleanup have to do this on dev box pkill -f tshark and pkill -f python3
+        data_c_p.terminate()
+        data_p_p.terminate()
+        services_p_p.terminate()
+        time_c_p.terminate()
 
 
 if __name__ == "__main__":
