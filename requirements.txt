@@ -29,7 +29,7 @@ Pillow==3.1.2
 piston-mini-client==0.7.5
 psutil==3.4.2
 ptyprocess==0.5
-py==1.5.2
+py==1.10.0
 pyasn1==0.1.9
 pycrypto==2.6.1
 pycups==1.9.73
