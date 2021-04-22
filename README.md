@@ -6,21 +6,30 @@ your own dataset or use this to read a PCAP from another source and convert that
 This program accepts a network log, _pcap_, and creates summary statistics using sliding window that moves through the log stream.
 The resulting _CSV_ file contains one row of packet_dict for each time segment.
 
-### packet_dict Flow
+![Sliding window](https://1.bp.blogspot.com/-Lm8r_RqO_MI/YHqa7w-ywmI/AAAAAAAAEZU/5d9v4sUa4osfCQl1Z21CcTjqRQCSozgbgCLcBGAsYHQ/s696/Packet-Stream-Windowing.png)
+
+### major components
 This runs as a multi-processing application with 4 python processes plus tshark
 
 | Stage | Python Module  | | Explanation |
 | - | - | -  | - |
-| Ethernet interface _or_ pcap | Python Module| \| | packet_dict source |
-| tshark - interface ingest    |              | \| | converts to one line per packet json-sh format |
-|                              | `capture `   | \| | reads from tshark output - massages labels |
-| sharedQ                      |              | \| | communication Queue |
-|                              | `detectors`  | \| | protocol detectors and protocol statistics |
-| servicesQ                    |              | \| | communicaton Queue  |
-|                              | `services`   | \| | higher level TCP and UDP service counts |
-| timesQ                       |              | \| | communicaton Queue  |
-|                              | `counts`     | \| | time windowing and file writer |
-| csv file                     |              | \| | feature file for model training |
+| Ethernet interface _or_ pcap |                     | \| | data source for packet_dict |
+|                              | _tshark not Python_ | \| | converts to one line per packet json-sh format |
+| subprocess pipe              |                   | \| | communication between tshark and the Python program
+|                              | `PacketCapture`   | \| | reads from tshark output - massages labels |
+| sharedQ                      |                   | \| | communication Queue |
+|                              | `PacketAnalyze`   | \| | protocol detectors and protocol statistics |
+| servicesQ                    |                   | \| | communicaton Queue  |
+|                              | `ServiceIdentity` | \| | higher level TCP and UDP service counts |
+| timesQ                       |                   | \| | communicaton Queue  |
+|                              | `TimesAndCounts`  | \| | time windowing and file writer |
+| csv file                     |                   | \| | feature file for model training |
+
+1. `tshark` captures live data or replays data from a pcap file. It each packet as a line of text output in their ek format. I chose it because each record is on a single line so now multi-line json assembly is required. The Python processes launch it and listen to standard out.
+1. `PacketCapture` is a python process that reads tshark and then transforms the data to make it more consumable.  It converts the EK to true JSON and massages some of the label styles to json standard.  The final text is pushed into a message queue
+1. `PacketAnalyze` accepts the dictionary from the Queue.  It creates a node pair identifier and identifies the protocol and forwards the original data, the id and protocol to the next stage via a Queue.  PacketAnalyze also captures aggregated statistics across the run. Nothing is done with those at this time and they are lost when the program exists.
+1. `ServiceIdentity` This module reads and ID, Protocol, packet data structure.  It analyzes the packet to identify the higher-level service type of the message.  Examples include DNS, SMTP, FTP, TLS, HTTP, SMB, SMB2, etc.  The service list is added to the incoming data set and sent to a topic.
+1. `TimesAndCounts` manages the time windows and calculates the time bucket/window statistics and writes them to output.  it reads from the inbound topic and aggregates statistics across a set of incoming packets.  The statistics are retained for a single time window and are written to csv file, one record for each time window.
 
 ## Corner cases and issues
 
@@ -85,7 +94,20 @@ You can find the original research paper on [researchgate](https://www.researchg
 
 ## Additions to the original project
 1. Added IGMP counts
+1. Added num_smb, num_smb2, num_pnrp, num_wsdd, num_ssdp
 1. Added column that shows when that row ends
+1. Eliminated global variables
+1. Unified pcap and live tshark into single set of classes
+1. Added command line options
+1. Added IPv6 to one of the detectors.  Can't remember which one
+1. Migrated from multi-threaded to multi-processors to make use of multiple cores.  A way to get around the GIL
+
+## References
+1. Sliding time windows for network analysis https://www.youtube.com/watch?v=b3MaxbAAdDw
+    * http://joe.blog.freemansoft.com/2021/04/network-intrusion-features-via-sliding.html
+1. Using Python to implement sliding time windows for network analysis https://www.youtube.com/watch?v=jKgGh5a5gFA
+    * http://joe.blog.freemansoft.com/2021/04/creating-features-in-python-using.html
+
 
 # Running this program 
 
@@ -128,7 +150,7 @@ You can find the original research paper on [researchgate](https://www.researchg
 1. In this mode you can load an existing PCAP and make a dataset in csv format. Specify the path to the input pcap with `--sourcefile <path>` The default is stored in `input_file_path` in `set.py`
 1. The software allows users to define a time window for each aggregation record. Specify the time in _msec_ with the `--window <size>` offering.. TThe default is stored in  `set.py` . The time is in milliseconds. 
 
-### Usage Notes:
+## Usage Notes:
 * Linux users can set the execute bit on main.py and run the main.py directly without the `python3` part.
     ```
     chmod +x main.py
@@ -146,12 +168,11 @@ Try this
 sudo tshark  -i eth0 -a duration:120 -w /tmp/foo.pcap -F pcap
 ```
 
-## Source Code
+# Source Code
 * The source tree is formatted with _black_ in _Visual Studio Code_
-* The source code is slowly migrating to the pep8 standard https://realpython.com/python-pep8/
 
-## performance
-This progam makes use of 4 cores including one for tshark
+# performance
+This progam makes use of 5 cores, 4 for python Python and one for tshark
 
 This benchmark prior to adding a back the queue between detectors and services.
 That topic degraded performance by 10% on a quad core. It added a 5th process.
@@ -164,6 +185,7 @@ That topic degraded performance by 10% on a quad core. It added a 5th process.
 1. Analysis times are linear with the number of packets processed
 1. Tested with ransomware samples from unavarra.es some of which may have originated on other sites.
 
+# Random notes
 ## Zombie processes
 You will end up with one zombie python3 process if you `ctrl-c` the command line you ran this under.
 Run some version of this:
