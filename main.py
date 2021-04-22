@@ -128,6 +128,7 @@ def main():
     try:
         time_c_p.wait
     except KeyboardInterrupt:
+        # This does not reliably clean up :-(
         # Without cleanup have to do this on dev box pkill -f tshark and pkill -f python3
         data_c_p.terminate()
         data_p_p.terminate()
