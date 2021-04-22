@@ -60,7 +60,7 @@ class TimesAndCounts(multiprocessing.Process):
         "num_udp",
         "num_arp",
         "num_igmp",
-        "connection_pairs",
+        "num_connection_pairs",
         "num_ports",
         "num_packets",
         "window_end_time",
@@ -297,7 +297,7 @@ class TimesAndCounts(multiprocessing.Process):
         record_for_csv.pop("IDs", None)
         record_for_csv.pop("ports", None)
         record_for_csv.pop("window_index", None)
-        record_for_csv["connection_pairs"] = len(one_record.IDs)
+        record_for_csv["num_connection_pairs"] = len(one_record.IDs)
         record_for_csv["num_ports"] = len(one_record.ports)
 
         writer.writerow(record_for_csv)

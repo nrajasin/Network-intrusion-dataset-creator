@@ -32,7 +32,7 @@ This runs as a multi-processing application with 4 python processes plus tshark
 
 ## Sample CSV output
 
-| tcp_frame_length|tcp_ip_length|tcp_length|udp_frame_length|udp_ip_length|udp_length|arp_frame_length|num_tls|num_http|num_ftp|num_ssh|num_smtp|num_dhcp|num_dns|num_nbns|num_smb|num_smb2|num_pnrp|num_wsdd|num_ssdp|num_tcp|num_udp|num_arp|num_igmp|connection_pairs|num_ports|num_packets|window_end_time |
+| tcp_frame_length|tcp_ip_length|tcp_length|udp_frame_length|udp_ip_length|udp_length|arp_frame_length|num_tls|num_http|num_ftp|num_ssh|num_smtp|num_dhcp|num_dns|num_nbns|num_smb|num_smb2|num_pnrp|num_wsdd|num_ssdp|num_tcp|num_udp|num_arp|num_igmp|num_connection_pairs|num_ports|num_packets|window_end_time |
 | -|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|--|-|-|-|-|-|- |
 | 0|0|0|2006|1084|1118|210|0|2|0|0|0|0|16|4|0|0|0|0|0|0|22|5|18|8|14|46|14806 |
 | 0|0|0|3479|2699|2487|0|0|5|0|0|0|0|6|15|2|0|0|0|0|0|28|0|6|4|8|34|19806 | 
