@@ -106,6 +106,10 @@ def main():
         queues.sharedQ,
     )
     data_c_p = data_collect.start()
+    # if not data_c_p:
+    #     print("tshark may not be installed try 'sudo apt install tshark'")
+    #     return
+
 
     data_process = PacketAnalyse(
         "packet analyzing thread", queues.sharedQ, queues.serviceQ
@@ -125,15 +129,15 @@ def main():
     )
     time_c_p = time_counts.start()
 
-    try:
-        time_c_p.wait
-    except KeyboardInterrupt:
-        # This does not reliably clean up :-(
-        # Without cleanup have to do this on dev box pkill -f tshark and pkill -f python3
-        data_c_p.terminate()
-        data_p_p.terminate()
-        services_p_p.terminate()
-        time_c_p.terminate()
+    # try:
+    #     time_c_p.wait
+    # except KeyboardInterrupt:
+    #     # This does not reliably clean up :-(
+    #     # Without cleanup have to do this on dev box pkill -f tshark and pkill -f python3
+    #     data_c_p.terminate()
+    #     data_p_p.terminate()
+    #     services_p_p.terminate()
+    #     time_c_p.terminate()
 
 
 if __name__ == "__main__":

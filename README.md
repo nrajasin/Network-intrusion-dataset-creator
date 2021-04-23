@@ -117,11 +117,21 @@ You can find the original research paper on [researchgate](https://www.researchg
     * The program is currently hard coded to run as sudo.
 1. You will need Wireshark/Tshark to run this software. Installation would vary depending on your OS.
     * Ubuntu: `sudo apt install tshark`
-1. This software is written in python3 so you will need to install python3. Most updated linux distributes already have it installed.
+1. This software is written in python3 so you will need to install python3. Most updated linux distributes already have it installed. 
+Install it the way you wish.  These were my notes.
     ```
     sudo apt-get update
     sudo apt-get install python3.8.5
+    sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.6 1
+    sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.8 2
+    sudo update-alternatives --config python
     ```
+    or if you are running anaconda
+
+    ```
+    conda update --prefix /home/joe/anaconda3 anaconda
+    ```
+    
 1. The requirements.txt file has been deleted because the current code base does not seem to require any additional libraries. Create a new one if you find you need it and submit a pull request.
 1. `tshark` is installed, reachable and, on the PATH.  This python program for tshar with somehting like:
     ```
@@ -174,13 +184,21 @@ sudo tshark  -i eth0 -a duration:120 -w /tmp/foo.pcap -F pcap
 # performance
 This progam makes use of 5 cores, 4 for python Python and one for tshark
 
-This benchmark prior to adding a back the queue between detectors and services.
-That topic degraded performance by 10% on a quad core. It added a 5th process.
+This benchmark **prior** to adding a back the queue between detectors and services.
+Adding that topic **degraded** performance by 10% on a quad core because it added a 5th process.
 
 | Sample  | sample file size | real time |  analyzed packets | time windows | time span |
 | ------- | ---------------- | --------- |  ---------------- | ------------ | ---------------- |
 | Crylock |   143,446,091 b  | real:1:47 user:6:07 sys:1:22   | 128778 @ 1201/sec  | 121 | 10:04 
-| Maze    | 1,045,083,415 b  | real:11:21 user:38:38 sys:8:33 | 770,987 @ 1131/sec | 94 | 7:59
+| Maze    | 1,045,083,415 b  | real:11:21 user:38:38 sys:8:33 | 770,987 @ 1131/sec | 94  | 7:59
+
+These tests were run on a slightly slower higher core, 16 core xeon 2.2Ghz. 
+Note that their performance is about the same as the 4 core run with fewer processes
+
+| Sample  | sample file size | real time                      |  analyzed packets | time windows | time span |
+| ------- | ---------------- | ---------                      |  ---------------- | ------------ | ---------------- |
+| Crylock |   143,446,091 b  | real:1:47 user:7:14 sys:2:36   | 128778 @ 1259/sec  | 121 | 10:04 
+| Maze    |   767,491,552 b  |                                | 573523 @ 1106/sec  | 111 | 09:21 |
 
 1. Analysis times are linear with the number of packets processed
 1. Tested with ransomware samples from unavarra.es some of which may have originated on other sites.

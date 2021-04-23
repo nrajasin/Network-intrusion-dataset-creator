@@ -55,14 +55,14 @@ class PacketAnalyse(multiprocessing.Process):
                     if not self.find_udp(thePacket, self.dvar):
                         if not self.find_arp(thePacket, self.dvar):
                             if not self.find_igmp(thePacket, self.dvar):
-                                dvar.not_analyzed_count += 1
+                                self.dvar.not_analyzed_count += 1
                                 # ip.proto does not always exist if not ip
                                 # print("PacketAnalyze.run Packet was not TCP, UDP, ARP, IGMP ")
                                 print(
                                     "PacketAnalyze: No protocol filter for:",
                                     thePacket["ip.proto"],
                                 )
-                                # print(PacketAnalyze.run thePacket)
+                                # print("PacketAnalyze.run: ", thePacket)
         end_timer = time.perf_counter()
         recognized_count = (
             self.dvar.tcp_count

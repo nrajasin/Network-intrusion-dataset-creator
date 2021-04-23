@@ -131,6 +131,7 @@ class PacketCapture(multiprocessing.Process):
                     .replace("__", ".")
                     .replace("request_", "request.")
                     .replace("record_", "record.")
+                    .replace("tcp_flags","tcp.flags")
                     .replace("flags_", "flags.")
                     .replace("src_", "src.")
                     .replace("dst_", "dst.")
