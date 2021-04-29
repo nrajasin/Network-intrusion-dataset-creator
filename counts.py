@@ -28,6 +28,7 @@ import csv
 from datetime import datetime
 from datetime import time
 from cvar import windowcounts
+import transitkeys
 
 # Creates the window counts and writes them to the CSV
 # Divide the packet_dict into time windows so that you can get average information for a given time
@@ -98,10 +99,10 @@ class TimesAndCounts(multiprocessing.Process):
                         break
                     # print("TimesAndCounts.run: processing packet_dict list: ", Datalist)
 
-                    ID = Datalist[0]
-                    packet_dict = Datalist[1]
-                    Prot1 = Datalist[2]
-                    services = Datalist[3]
+                    ID = Datalist[transitkeys.key_id]
+                    packet_dict = Datalist[transitkeys.key_packet]
+                    Prot1 = Datalist[transitkeys.key_protocol]
+                    services = Datalist[transitkeys.key_services]
 
                     if pack_count == 1:
                         # claim stop time was 0 which will cause a new window to be built

@@ -22,6 +22,7 @@
 
 # Protocol detectors
 
+import transitkeys
 import ipaddress
 import multiprocessing
 import time
@@ -62,7 +63,7 @@ class PacketAnalyse(multiprocessing.Process):
                                     "PacketAnalyze: No protocol filter for:",
                                     thePacket["ip.proto"],
                                 )
-                                # print("PacketAnalyze.run: ", thePacket)
+                                # print("PacketAnalyze.run: failed to identify ", thePacket)
         end_timer = time.perf_counter()
         recognized_count = (
             self.dvar.tcp_count
@@ -143,7 +144,7 @@ class PacketAnalyse(multiprocessing.Process):
 
         return result
 
-    def gen_tcp_stats(self, existing_stats, packet_dict, srcKey, dstKey):
+    def gen_arp_stats(self, existing_stats, packet_dict, srcKey, dstKey):
         pack_count = 0
         if existing_stats:
             pack_count = existing_stats.count
@@ -168,25 +169,29 @@ class PacketAnalyse(multiprocessing.Process):
                 and self.gen_src_dst_key(packet_dict["ip.src"], packet_dict["ip.dst"])
                 in dvar.tcp.keys()
             ):
-                ky = self.gen_src_dst_key(packet_dict["ip.src"], packet_dict["ip.dst"])
-                status = dvar.tcp[ky]
+                packet_key = self.gen_src_dst_key(
+                    packet_dict["ip.src"], packet_dict["ip.dst"]
+                )
+                status = dvar.tcp[packet_key]
                 # print("PacketAnalyze ", pack_count)
-                dvar.tcp[ky] = self.gen_tcp_stats(
+                dvar.tcp[packet_key] = self.gen_tcp_stats(
                     status, packet_dict, "ip.src", "ip.dst"
                 )
                 dvar.tcp_count += 1
 
-                self.send(ky, packet_dict, "tcp")
+                self.send(packet_key, packet_dict, "tcp")
                 success = True
             elif "ip.src" in packet_dict and "tcp.flags.syn" in packet_dict:
 
-                ky = self.gen_src_dst_key(packet_dict["ip.src"], packet_dict["ip.dst"])
-                dvar.tcp[ky] = self.gen_tcp_stats(
-                    set(), packet_dict, "ip.src", "ip.dst"
+                packet_key = self.gen_src_dst_key(
+                    packet_dict["ip.src"], packet_dict["ip.dst"]
+                )
+                dvar.tcp[packet_key] = self.gen_tcp_stats(
+                    {}, packet_dict, "ip.src", "ip.dst"
                 )
                 dvar.tcp_count += 1
 
-                self.send(ky, packet_dict, "tcp")
+                self.send(packet_key, packet_dict, "tcp")
                 success = True
             else:
                 success = False
@@ -199,29 +204,29 @@ class PacketAnalyse(multiprocessing.Process):
                 in dvar.tcp.keys()
             ):
 
-                ky = self.gen_ipv6_src_dst_key(
+                packet_key = self.gen_ipv6_src_dst_key(
                     packet_dict["ipv6.src"], packet_dict["ipv6.dst"]
                 )
-                status = dvar.tcp[ky]
+                status = dvar.tcp[packet_key]
                 # print("PacketAnalyze ",pack_count)
-                dvar.tcp[ky] = self.gen_tcp_stats(
+                dvar.tcp[packet_key] = self.gen_tcp_stats(
                     status, packet_dict, "ipv6.src", "ipv6.dst"
                 )
                 dvar.tcp_count += 1
 
-                self.send(ky, packet_dict, "tcp")
+                self.send(packet_key, packet_dict, "tcp")
                 success = True
             elif "ipv6.src" in packet_dict and "tcp.flags.syn" in packet_dict:
 
-                ky = self.gen_ipv6_src_dst_key(
+                packet_key = self.gen_ipv6_src_dst_key(
                     packet_dict["ipv6.src"], packet_dict["ipv6.dst"]
                 )
-                dvar.tcp[ky] = self.gen_tcp_stats(
-                    set(), packet_dict, "ipv6.src", "ipv6.dst"
+                dvar.tcp[packet_key] = self.gen_tcp_stats(
+                    {}, packet_dict, "ipv6.src", "ipv6.dst"
                 )
                 dvar.tcp_count += 1
 
-                self.send(ky, packet_dict, "tcp")
+                self.send(packet_key, packet_dict, "tcp")
                 success = True
             else:
                 success = False
@@ -243,24 +248,28 @@ class PacketAnalyse(multiprocessing.Process):
                 in dvar.udp.keys()
             ):
 
-                ky = self.gen_src_dst_key(packet_dict["ip.src"], packet_dict["ip.dst"])
-                status = dvar.udp[ky]
-                dvar.udp[ky] = self.gen_udp_stats(
+                packet_key = self.gen_src_dst_key(
+                    packet_dict["ip.src"], packet_dict["ip.dst"]
+                )
+                status = dvar.udp[packet_key]
+                dvar.udp[packet_key] = self.gen_udp_stats(
                     status, packet_dict, "ip.src", "ip.dst"
                 )
                 dvar.udp_count += 1
 
-                self.send(ky, packet_dict, "udp")
+                self.send(packet_key, packet_dict, "udp")
                 success = True
             elif "udp.srcport" in packet_dict:
 
-                ky = self.gen_src_dst_key(packet_dict["ip.src"], packet_dict["ip.dst"])
-                dvar.udp[ky] = self.gen_udp_stats(
-                    set(), packet_dict, "ip.src", "ip.dst"
+                packet_key = self.gen_src_dst_key(
+                    packet_dict["ip.src"], packet_dict["ip.dst"]
+                )
+                dvar.udp[packet_key] = self.gen_udp_stats(
+                    {}, packet_dict, "ip.src", "ip.dst"
                 )
                 dvar.udp_count += 1
 
-                self.send(ky, packet_dict, "udp")
+                self.send(packet_key, packet_dict, "udp")
                 success = True
             else:
                 success = False
@@ -274,28 +283,28 @@ class PacketAnalyse(multiprocessing.Process):
                 in dvar.udp.keys()
             ):
 
-                ky = self.gen_ipv6_src_dst_key(
+                packet_key = self.gen_ipv6_src_dst_key(
                     packet_dict["ipv6.src"], packet_dict["ipv6.dst"]
                 )
-                status = dvar.udp[ky]
+                status = dvar.udp[packet_key]
 
-                dvar.udp[ky] = self.gen_udp_stats(
+                dvar.udp[packet_key] = self.gen_udp_stats(
                     status, packet_dict, "ipv6.src", "ipv6.dst"
                 )
                 dvar.udp_count += 1
 
-                self.send(ky, packet_dict, "udp")
+                self.send(packet_key, packet_dict, "udp")
                 success = True
             elif "udp.srcport" in packet_dict:
-                ky = self.gen_ipv6_src_dst_key(
+                packet_key = self.gen_ipv6_src_dst_key(
                     packet_dict["ipv6.src"], packet_dict["ipv6.dst"]
                 )
-                dvar.udp[ky] = self.gen_udp_stats(
-                    set(), packet_dict, "ipv6.src", "ipv6.dst"
+                dvar.udp[packet_key] = self.gen_udp_stats(
+                    {}, packet_dict, "ipv6.src", "ipv6.dst"
                 )
                 dvar.udp_count += 1
 
-                self.send(ky, packet_dict, "udp")
+                self.send(packet_key, packet_dict, "udp")
                 success = True
             else:
                 success = False
@@ -313,35 +322,36 @@ class PacketAnalyse(multiprocessing.Process):
                 )
                 in dvar.arp.keys()
             ):
-                ky = self.gen_src_dst_key(
+                packet_key = self.gen_src_dst_key(
                     packet_dict["arp.src.proto_ipv4"],
                     packet_dict["arp.dst.proto_ipv4"],
                 )
-                status = dvar.arp[ky]
-                dvar.arp[ky] = self.gen_tcp_stats(
+                status = dvar.arp[packet_key]
+                dvar.arp[packet_key] = self.gen_arp_stats(
                     status, packet_dict, "arp.src.proto_ipv4", "arp.dst.proto_ipv4"
                 )
                 dvar.arp_count += 1
 
-                self.send(ky, packet_dict, "arp")
+                self.send(packet_key, packet_dict, "arp")
                 success = True
             elif "arp.src.proto_ipv4" in packet_dict:
 
-                ky = self.gen_src_dst_key(
+                packet_key = self.gen_src_dst_key(
                     packet_dict["arp.src.proto_ipv4"], packet_dict["arp.dst.proto_ipv4"]
                 )
 
-                dvar.arp[ky] = self.gen_tcp_stats(
-                    set(), packet_dict, "arp.src.proto_ipv4", "arp.dst.proto_ipv4"
+                dvar.arp[packet_key] = self.gen_arp_stats(
+                    {}, packet_dict, "arp.src.proto_ipv4", "arp.dst.proto_ipv4"
                 )
                 dvar.arp_count += 1
 
-                self.send(ky, packet_dict, "arp")
+                self.send(packet_key, packet_dict, "arp")
                 success = True
             else:
                 success = False
 
         except AttributeError:
+            # traceback.print_exc()
             print("PacketAnalyze ", packet_dict)
             success = False
 
@@ -357,25 +367,31 @@ class PacketAnalyse(multiprocessing.Process):
         try:
             # TODO do we count all ip.proto or look for other markers
             if "ip.src" in packet_dict and "ip.dst" in packet_dict:
-                ky = self.gen_src_dst_key(packet_dict["ip.src"], packet_dict["ip.dst"])
+                packet_key = self.gen_src_dst_key(
+                    packet_dict["ip.src"], packet_dict["ip.dst"]
+                )
                 # I don't know anything about IGMP so just set the pack count to 1 all the time
                 dvar.igmp_count += 1
-                self.send(ky, packet_dict, "igmp")
+                self.send(packet_key, packet_dict, "igmp")
                 success = True
             elif "ipv6.src" in packet_dict and "ipv6.dst" in packet_dict:
-                ky = self.gen_ipv6_src_dst_key(
+                packet_key = self.gen_ipv6_src_dst_key(
                     packet_dict["ipv6.src"], packet_dict["ipv6.dst"]
                 )
                 # I don't know anything about IGMP so just set the pack count to 1 all the time
                 dvar.igmp_count += 1
-                self.send(ky, packet_dict, "igmp")
+                self.send(packet_key, packet_dict, "igmp")
                 success = True
         except AttributeError:
-            print("PacketAnalyze", packet_dict)
+            print("PacketAnalyze attribute error", packet_dict)
             success = False
         return success
 
-    from services import ServiceIdentity
-
     def send(self, ID, PacketData, PacketProtocol):
-        self.outQ.put([ID, PacketData, PacketProtocol])
+        self.outQ.put(
+            {
+                transitkeys.key_id: ID,
+                transitkeys.key_packet: PacketData,
+                transitkeys.key_protocol: PacketProtocol,
+            }
+        )

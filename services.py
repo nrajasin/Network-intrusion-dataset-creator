@@ -22,6 +22,7 @@
 
 import multiprocessing
 import queues
+import transitkeys
 
 # check the traffic for different services in the traffic suhc as tls,http,smtp
 
@@ -42,19 +43,20 @@ class ServiceIdentity(multiprocessing.Process):
                 if not Datalist:
                     # empty datalist means done
                     # print("ServiceIdentity: We're done - empty dataset received")
-                    self.outQ.put([])
+                    self.outQ.put({})
                     break
                 # print("ServiceIdentity: ",Datalist)
                 # print("ServiceIdentity: NotifiedAbout=",Datalist[0],"invoke",str(service_count)," times")
                 service_count += 1
-                ID = Datalist[0]
-                packet_dict = Datalist[1]
-                packet_protocol = Datalist[2]
-                found_services = self.findServices(ID, packet_dict, packet_protocol)
-                if found_services:
-                    Datalist.append(found_services)
+                ID = Datalist[transitkeys.key_id]
+                packet_dict = Datalist[transitkeys.key_packet]
+                packet_protocol = Datalist[transitkeys.key_protocol]
+                found_services = self.findServices(
+                    ID, packet_dict, packet_protocol)
+                if found_services: 
+                    Datalist[transitkeys.key_services] = found_services
                 else:
-                    Datalist.append({"no service"})
+                    Datalist[transitkeys.key_services] = {"no service"}
                 self.outQ.put(Datalist)
         print("services.serviceidentity.run: Exiting thread")
 
