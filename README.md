@@ -184,21 +184,22 @@ sudo tshark  -i eth0 -a duration:120 -w /tmp/foo.pcap -F pcap
 # performance
 This progam makes use of 5 cores, 4 for python Python and one for tshark
 
-This benchmark **prior** to adding a back the queue between detectors and services.
+This benchmark was for 2 queue 3 python process version **prior** to adding a back the queue between detectors and services.
 Adding that topic **degraded** performance by 10% on a quad core because it added a 5th process.
 
-| Sample  | sample file size | real time |  analyzed packets | time windows | time span |
-| ------- | ---------------- | --------- |  ---------------- | ------------ | ---------------- |
-| Crylock |   143,446,091 b  | real:1:47 user:6:07 sys:1:22   | 128778 @ 1201/sec  | 121 | 10:04 
-| Maze    | 1,045,083,415 b  | real:11:21 user:38:38 sys:8:33 | 770,987 @ 1131/sec | 94  | 7:59
+| Sample  | sample file size | real time                      |  analyzed packets  | time windows | sample period | python |
+| ------- | ---------------- | -------------------------------|  ----------------  | ------------ | ------------- | ------ |
+| Crylock |   143,446,091 b  | real:1:47 user:6:07 sys:1:22   | 128778 @ 1201/sec  | 121 | 10:04 | cpython |
+| Maze    | 1,045,083,415 b  | real:11:21 user:38:38 sys:8:33 | 770,987 @ 1131/sec | 94  | 7:59  | cpython |
 
 These tests were run on a slightly slower higher core, 16 core xeon 2.2Ghz. 
 Note that their performance is about the same as the 4 core run with fewer processes
 
-| Sample  | sample file size | real time                      |  analyzed packets | time windows | time span |
-| ------- | ---------------- | ---------                      |  ---------------- | ------------ | ---------------- |
-| Crylock |   143,446,091 b  | real:1:47 user:7:14 sys:2:36   | 128778 @ 1259/sec  | 121 | 10:04 
-| Maze    |   767,491,552 b  |                                | 573523 @ 1106/sec  | 111 | 09:21 |
+| Sample  | sample file size | real time                      |  analyzed packets  | time windows | sample period | python | 
+| ------- | ---------------- | -------------------------------|  ----------------  | ------------ | ------------- | ------ |
+| Crylock |   143,446,091 B  | real:1:47 user:7:14 sys:2:36   | 128778 @ 1259/sec  | 121 | 10:04 | cpython | 
+| Crylock |   143,446,091 B  | real:3:07 user 11:39 sys:1:21  | 128778 @ 754/sec   | 121 | 10:04 | pypy    | 
+| Maze    |   767,491,552 B  |                                | 573523 @ 1106/sec  | 111 | 09:21 | cpython |
 
 1. Analysis times are linear with the number of packets processed
 1. Tested with ransomware samples from unavarra.es some of which may have originated on other sites.
