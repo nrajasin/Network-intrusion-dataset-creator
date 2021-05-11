@@ -110,7 +110,6 @@ def main():
     #     print("tshark may not be installed try 'sudo apt install tshark'")
     #     return
 
-
     data_process = PacketAnalyse(
         "packet analyzing thread", queues.sharedQ, queues.serviceQ
     )

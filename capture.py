@@ -47,7 +47,7 @@ class PacketCapture(multiprocessing.Process):
         self.keymap = {}
 
     def run(self):
-        cmd = "sudo " + self.tshark_program + " -V -i -l -T ek"
+        cmd = "sudo --help"
         if self.input_file_name is not None:
             cmd = "" + self.tshark_program + " -V -r " + self.input_file_name + " -T ek"
         else:
@@ -131,7 +131,7 @@ class PacketCapture(multiprocessing.Process):
                     .replace("__", ".")
                     .replace("request_", "request.")
                     .replace("record_", "record.")
-                    .replace("tcp_flags","tcp.flags")
+                    .replace("tcp_flags", "tcp.flags")
                     .replace("flags_", "flags.")
                     .replace("src_", "src.")
                     .replace("dst_", "dst.")
