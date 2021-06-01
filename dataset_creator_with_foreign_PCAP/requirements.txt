@@ -56,7 +56,7 @@ thin-client-config-agent==0.8
 trollius==1.0.4
 ubuntu-drivers-common==0.0.0
 ufw==0.35
-urllib3==1.22
+urllib3==1.26.5
 virtkey==0.63.0
 virtualenv==15.1.0
 virtualenv-clone==0.2.6
