@@ -86,7 +86,7 @@ class packetanalyze (threading.Thread):
 		self.threadID = threadID
 		self.name = name
 	def run(self):
-		while True:
+		while set.end_of_file==False:
 			if set.sharedQ.empty()==False:
 
 				fortcp=set.sharedQ.get()

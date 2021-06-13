@@ -212,7 +212,9 @@ def Arp (Data):
 			set.arp_count=set.arp_count+1
 		else:
 			set.notARP.put(Data)
-			
+			if(Data=='done'):
+				set.servicesQ.put(Data)
+		
 			
 	except AttributeError:
 		print( Data)		
