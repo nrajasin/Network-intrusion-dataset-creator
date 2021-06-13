@@ -45,30 +45,37 @@ class packetcap (threading.Thread):
 		self.threadID = threadID
 		self.name = name
 	def run(self):
-		cmd = "sudo tshark -r /path/datafile -V -T json"
+		cmd = "sudo tshark -r /home/deepti/Documents/sample.pcap -V -T json"
 		p = subprocess.Popen(cmd, stdout=subprocess.PIPE, bufsize=1, shell=True, universal_newlines=True)
 		json_str = ""
-		for line  in p.stdout:
-			
-			if line.strip() == '[':
-				continue
-			if line.strip() in [',', ']']:
-				json_obj = json.loads(json_str.strip())
-				source_filter = json_obj['_source']['layers']
-				keyval=source_filter.items()
-				set.allkeyval={}
-				a=unwrap(keyval,{})
-
+		try:
+			for line  in p.stdout:
+				if line.strip('\n') == '[':
+					continue
+				if line.strip('\n') in ['  },', ']']:
+					if line.strip('\n') in ['  },']:
+						json_str += '}'
+					json_obj = json.loads(json_str)
+					source_filter = json_obj['_source']['layers']
+					keyval=source_filter.items()
+					set.allkeyval={}
+					a=unwrap(keyval,{})
 				
-				json_str = ""
-				
-				send_data(a)
+					json_str = ""
 
-			else:
-				json_str += line
-		send_data("done")
-		p.stdout.close()
-		p.wait()
+					send_data(a)
+
+				else:
+					json_str += line
+				
+			send_data("done")
+			p.stdout.close()
+			p.wait()
+		except:
+			print('cant read')
+			send_data("done")
+			p.stdout.close()
+			p.wait()
 		
 
 ## separate out tcp,udp and arp traffic

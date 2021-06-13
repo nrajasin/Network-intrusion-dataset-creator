@@ -33,13 +33,13 @@ class services (threading.Thread):
 		self.threadID = threadID
 		self.name = name
 	def run(self):
+		global service_count
 		service_count=0
-		while True:
+		while set.end_of_file==False:
 
 			if set.servicesQ.empty()==False:
 				
 				Datalist=set.servicesQ.get()
-				global service_count
 				service_count=service_count+1
 				global serv
 				serv =[]
@@ -57,13 +57,15 @@ class services (threading.Thread):
 					dns(Data)
 					smtp(Data)
 					dhcp(Data)
-					
 				if len(serv)>0:
 					Datalist.append(serv)
 					set.timesQ.put(Datalist)
 				else:
-					Datalist.append(["no service"])
+					if(Datalist!='done'):
+						Datalist.append(["no service"])
 					set.timesQ.put(Datalist)
+		if(set.end_of_file):
+			print('services complete')
 
 
 	
