@@ -45,7 +45,7 @@ class packetcap (threading.Thread):
 		self.threadID = threadID
 		self.name = name
 	def run(self):
-		cmd = "sudo tshark -r /home/deepti/Documents/sample.pcap -V -T json"
+		cmd = "sudo tshark -r path/sample.pcap -V -T json"
 		p = subprocess.Popen(cmd, stdout=subprocess.PIPE, bufsize=1, shell=True, universal_newlines=True)
 		json_str = ""
 		try:
