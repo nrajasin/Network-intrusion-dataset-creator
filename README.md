@@ -93,6 +93,7 @@ If you are using this for research purposes please cite the publication listed b
 You can find the original research paper on [researchgate](https://www.researchgate.net/profile/Nadun-Rajasinghe/project/A-customizable-Network-Intrusion-Detection-dataset-creating-framework/attachment/5aff08f8b53d2f63c3ccae32/AS:627686015766528@1526663416701/download/1570426776.pdf?context=ProjectUpdatesLog)
 
 ## Additions to the original project
+1. Migrated from print() statements to logging.  Logging levels and formats are configured in `logging_config.yaml`
 1. Added IGMP counts
 1. Added num_smb, num_smb2, num_pnrp, num_wsdd, num_ssdp
 1. Added column that shows when that row ends
@@ -166,8 +167,8 @@ Install it the way you wish.  These were my notes.
     chmod +x main.py
     ```
 
-### Sample reading from file
-reads from a pcap and writes to dataset.csv
+### Sample: reading from file
+Reads from a pcap and writes to dataset.csv
 
 `python3 main.py --sourcefile Razi_15012021.pcap`
 
@@ -179,7 +180,7 @@ sudo tshark  -i eth0 -a duration:120 -w /tmp/foo.pcap -F pcap
 ```
 
 # Source Code
-* The source tree is formatted with _black_ in _Visual Studio Code_
+* The source tree is formatted with _black_ in _Visual Studio Code_ extension
 
 # performance
 This progam makes use of 5 cores, 4 for python Python and one for tshark
