@@ -90,7 +90,7 @@ If you are using this for research purposes please cite the publication listed b
         noted."
     }
 ```
-You can find the original research paper on [researchgate](https://www.researchgate.net/profile/Nadun-Rajasinghe/project/A-customizable-Network-Intrusion-Detection-dataset-creating-framework/attachment/5aff08f8b53d2f63c3ccae32/AS:627686015766528@1526663416701/download/1570426776.pdf?context=ProjectUpdatesLog)
+You can find the original research paper on [researchgate](https://www.researchgate.net/profile/Nadun-Rajasinghe/project/A-customizable-Network-Intrusion-Detection-dataset-creating-framework/attachment/5aff08f8b53d2f63c3ccae32/AS:627686015766528@1526663416701/download/1570426776.pdf?context=ProjectUpdatesLog) and related papers at [University of Western Ontario](https://ir.lib.uwo.ca/cgi/viewcontent.cgi?article=7681&context=etd)
 
 ## Additions to the original project
 1. Migrated from print() statements to logging.  Logging levels and formats are configured in `logging_config.yaml`
