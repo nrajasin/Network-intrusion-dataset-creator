@@ -46,7 +46,7 @@ class PacketAnalyse(multiprocessing.Process):
 
     def run(self):
         start_timer = time.perf_counter()
-        self.logger.info("run()")
+        self.logger.info("Starting")
         while True:
             if not self.inQ.empty():
                 thePacket = self.inQ.get()

@@ -81,7 +81,7 @@ class TimesAndCounts(multiprocessing.Process):
         self.current_time = 0
 
     def run(self):
-        self.logger.info("run()")
+        self.logger.info("Starting")
         with open(self.csv_file_path, "w") as csvfile:
 
             writer = csv.DictWriter(csvfile, fieldnames=self.fieldnames, restval="0")

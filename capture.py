@@ -65,7 +65,7 @@ class PacketCapture(multiprocessing.Process):
                 + str(self.how_long)
                 + " -l -T ek"
             )
-        self.logger.info("run(): Capturing with: %s", cmd)
+        self.logger.info("Starting: Capturing with: %s", cmd)
         p = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
