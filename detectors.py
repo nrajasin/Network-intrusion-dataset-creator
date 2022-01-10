@@ -30,6 +30,7 @@ from dvar import datasetSummary
 from pairstats import pair_stats_tcp
 from pairstats import pair_stats_udp
 from pairstats import pair_stats_arp
+import logging
 
 # separate out tcp,udp and arp traffic
 
@@ -37,6 +38,7 @@ from pairstats import pair_stats_arp
 class PacketAnalyse(multiprocessing.Process):
     def __init__(self, name, inQ, outQ):
         multiprocessing.Process.__init__(self)
+        self.logger = logging.getLogger(__name__)
         self.name = name
         self.inQ = inQ
         self.outQ = outQ
@@ -44,12 +46,12 @@ class PacketAnalyse(multiprocessing.Process):
 
     def run(self):
         start_timer = time.perf_counter()
-        print("PacketAnalyze: run()")
+        self.logger.info("run()")
         while True:
             if not self.inQ.empty():
                 thePacket = self.inQ.get()
                 if not thePacket:
-                    # print("PacketAnalyze.run: We're done - empty dictionary received on queue")
+                    self.logger.debug("We're done - empty dictionary received on queue")
                     self.outQ.put([])
                     break
                 if not self.find_tcp(thePacket, self.dvar):
@@ -58,12 +60,12 @@ class PacketAnalyse(multiprocessing.Process):
                             if not self.find_igmp(thePacket, self.dvar):
                                 self.dvar.not_analyzed_count += 1
                                 # ip.proto does not always exist if not ip
-                                # print("PacketAnalyze.run Packet was not TCP, UDP, ARP, IGMP ")
-                                print(
-                                    "PacketAnalyze: No protocol filter for:",
-                                    thePacket["ip.proto"],
+                                self.logger.debug("Packet was not TCP, UDP, ARP, IGMP ")
+                                packet_ip_proto = thePacket["ip.proto"]
+                                self.logger.info(
+                                    "No protocol filter for: %s", packet_ip_proto
                                 )
-                                # print("PacketAnalyze.run: failed to identify ", thePacket)
+                                self.logger.debug("failed to identify %s", thePacket)
         end_timer = time.perf_counter()
         recognized_count = (
             self.dvar.tcp_count
@@ -73,28 +75,10 @@ class PacketAnalyse(multiprocessing.Process):
             + self.dvar.not_analyzed_count
         )
         coarse_pps = recognized_count / (end_timer - start_timer)
-        print(
-            "PacketAnalyze.run:",
-            " read=",
-            str(recognized_count),
-            " pps=",
-            str(coarse_pps),
-            " tcp_count=",
-            str(self.dvar.tcp_count),
-            " udp_count=",
-            str(self.dvar.udp_count),
-            " arp_count=",
-            str(self.dvar.arp_count),
-            " igmp_count=",
-            str(self.dvar.igmp_count),
-            " tcp_pairs=",
-            str(len(self.dvar.tcp)),
-            " udp_pairs=",
-            str(len(self.dvar.udp)),
-            " not_analyzed=",
-            str(self.dvar.not_analyzed_count),
+        self.logger.info(
+            f"read={recognized_count} pps={coarse_pps} tcp_count={self.dvar.tcp_count} udp_count={self.dvar.udp_count} arp_count={self.dvar.arp_count} igmp_count={self.dvar.igmp_count} tcp_pairs={self.dvar.tcp} udp_pairs={self.dvar.udp} not_analyzed={self.dvar.not_analyzed_count}"
         )
-        print("PacketAnalyze.run: Exiting thread")
+        self.logger.info("Exiting thread")
 
     # orders the src and dst before hashing
     # pass in strings that are the ip addresses from the packet
@@ -173,7 +157,7 @@ class PacketAnalyse(multiprocessing.Process):
                     packet_dict["ip.src"], packet_dict["ip.dst"]
                 )
                 status = dvar.tcp[packet_key]
-                # print("PacketAnalyze ", pack_count)
+                self.logger.debug("%s, %s", packet_key, status)
                 dvar.tcp[packet_key] = self.gen_tcp_stats(
                     status, packet_dict, "ip.src", "ip.dst"
                 )
@@ -208,7 +192,7 @@ class PacketAnalyse(multiprocessing.Process):
                     packet_dict["ipv6.src"], packet_dict["ipv6.dst"]
                 )
                 status = dvar.tcp[packet_key]
-                # print("PacketAnalyze ",pack_count)
+                self.logger.debug("{packet_key} {status}")
                 dvar.tcp[packet_key] = self.gen_tcp_stats(
                     status, packet_dict, "ipv6.src", "ipv6.dst"
                 )
@@ -232,7 +216,7 @@ class PacketAnalyse(multiprocessing.Process):
                 success = False
 
         except AttributeError:
-            print("PacketAnalyze ", packet_dict)
+            self.logger.info("%s", packet_dict)
         return success
 
     def find_udp(self, packet_dict, dvar):
@@ -351,8 +335,8 @@ class PacketAnalyse(multiprocessing.Process):
                 success = False
 
         except AttributeError:
-            # traceback.print_exc()
-            print("PacketAnalyze ", packet_dict)
+            # traceback.self.logger.info_exc()
+            self.logger.info("%s", packet_dict)
             success = False
 
         return success
@@ -383,7 +367,7 @@ class PacketAnalyse(multiprocessing.Process):
                 self.send(packet_key, packet_dict, "igmp")
                 success = True
         except AttributeError:
-            print("PacketAnalyze attribute error", packet_dict)
+            self.logger.info("attribute error %s", packet_dict)
             success = False
         return success
 

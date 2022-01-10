@@ -29,8 +29,25 @@ from capture import *
 import argparse
 import queues
 
+import logging
+import logging.config
+import yaml
+
+
+def load_logging():
+    with open("logging_config.yaml", "r") as f:
+        config = yaml.safe_load(f.read())
+        logging.config.dictConfig(config)
+    logger = logging.getLogger(__name__)
+    logger.debug("handlers: %s", logger.handlers)
+    if len(logger.handlers) == 0:
+        logger.warn("no handlers found for this logger")
+
 
 def main():
+    load_logging()
+    logger = logging.getLogger(__name__)
+
     # load the settings
     settings = AppSettings()
 
@@ -82,7 +99,7 @@ def main():
         action="store",
     )
     args = parser.parse_args()
-    print("main:main Running with: ", vars(args))
+    logger.info("main:main Running with: %s", vars(args))
 
     if args.sourcefile:
         settings.input_file_name = args.sourcefile
@@ -107,7 +124,7 @@ def main():
     )
     data_c_p = data_collect.start()
     # if not data_c_p:
-    #     print("tshark may not be installed try 'sudo apt install tshark'")
+    #     self.logger.info("tshark may not be installed try 'sudo apt install tshark'")
     #     return
 
     data_process = PacketAnalyse(

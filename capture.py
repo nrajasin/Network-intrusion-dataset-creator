@@ -26,6 +26,8 @@ import subprocess
 import json
 import time
 import multiprocessing
+import logging
+
 
 # capture packets using wireshark and convert them to python dictionary objects
 # args input-file-name, ethernet-interface, how-long
@@ -37,6 +39,9 @@ class PacketCapture(multiprocessing.Process):
     ):
         multiprocessing.Process.__init__(self)
         self.name = name
+        self.logger = logging.getLogger(__name__)
+
+        self.logger.info("started")
 
         self.tshark_program = tshark_program
         self.input_file_name = input_file_name
@@ -60,7 +65,7 @@ class PacketCapture(multiprocessing.Process):
                 + str(self.how_long)
                 + " -l -T ek"
             )
-        print("PacketCapture: run(): Capturing with: ", cmd)
+        self.logger.info("run(): Capturing with: %s", cmd)
         p = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
@@ -79,38 +84,35 @@ class PacketCapture(multiprocessing.Process):
             line = p.stdout.readline()
             if "layers" in line:
                 num_read += 1
-                # print("PacketCapture: working with line ", line)
+                self.logger.debug("Working with line %s", line)
                 json_obj = json.loads(line.strip())
                 source_filter = json_obj["layers"]
                 keyval = source_filter.items()
-                # print("PacketCapture: working with dict ", line)
+                self.logger.debug("Working with dict %s", keyval)
                 a = self.unwrap(keyval)
-                # print("PacketCapture: working with packet ", a)
+                self.logger.debug("Working with packet %s", a)
                 self.send_data(a)
             else:
                 # we get blank lines
-                # print("PacketCapture: ignoring: ",line)
+                self.logger.debug("Ignoring: %s", line)
                 pass
             if not line and p.poll() is not None:
                 # possible could delay here to let processing complete
-                # print("PacketCapture: We're done - no input and tshark exited")
+                self.logger.debug("We're done - no input and tshark exited")
                 self.send_data({})
                 break
         end_timer = time.perf_counter()
-        print(
-            "PacketCapture.run: processed:",
-            str(num_read),
-            " rate:",
-            str(num_read / (end_timer - start_timer)),
-        )
+        calc_rate = num_read / (end_timer - start_timer)
+        self.logger.info("processed: %d rate: %f ", num_read, calc_rate)
         p.stdout.close()
         p.wait()
+        self.logger.info("Exiting thread")
 
     # saves each dictionary object into a Queue
 
     def send_data(self, dictionary):
-        # print("PacketCapture: sending dictionary size: ", len(dictionary))
-        # print("PacketCapture: sending dictionary : ", dictionary)
+        self.logger.debug("Sending dictionary size: %d", len(dictionary))
+        self.logger.debug("Sending dictionary : %s", dictionary)
         self.outQ.put(dictionary)
 
     # this function unwraps a multi level JSON object into a python dictionary with key value pairs
@@ -138,12 +140,12 @@ class PacketCapture(multiprocessing.Process):
                 )
                 # add the before and after to the map so we don't have to calculate again
                 self.keymap[key1] = massagedKey1
-                # print("PacketCapture: registered mapping: ", key1, " --> ",massagedKey1)
+                self.logger.debug("Registered mapping: %s --> %s", key1, massagedKey1)
 
             if isinstance(value1, (str, bool, list)):
                 newKeyval[self.keymap[key1]] = value1
             elif value1 is None:
-                # print("PacketCapture: Ignoring and tossing null value", key1)
+                self.logger.debug("Ignoring and tossing null value %s", key1)
                 pass
             else:
                 newKeyval.update(self.unwrap(value1.items()))

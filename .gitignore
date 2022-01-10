@@ -5,3 +5,5 @@ __pycache__
 *.csv
 *.pcap
 *.json
+*.gz
+*.log

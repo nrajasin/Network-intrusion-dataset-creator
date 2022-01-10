@@ -29,6 +29,8 @@ from datetime import datetime
 from datetime import time
 from cvar import windowcounts
 import transitkeys
+import logging
+
 
 # Creates the window counts and writes them to the CSV
 # Divide the packet_dict into time windows so that you can get average information for a given time
@@ -70,6 +72,7 @@ class TimesAndCounts(multiprocessing.Process):
     def __init__(self, name, time_window, csv_file_path, inQ):
         multiprocessing.Process.__init__(self)
         self.name = name
+        self.logger = logging.getLogger(__name__)
         self.time_window = time_window
         self.csv_file_path = csv_file_path
         self.inQ = inQ
@@ -78,7 +81,7 @@ class TimesAndCounts(multiprocessing.Process):
         self.current_time = 0
 
     def run(self):
-        print("TimesAndCounts: run()")
+        self.logger.info("run()")
         with open(self.csv_file_path, "w") as csvfile:
 
             writer = csv.DictWriter(csvfile, fieldnames=self.fieldnames, restval="0")
@@ -97,7 +100,7 @@ class TimesAndCounts(multiprocessing.Process):
                     Datalist = self.inQ.get()
                     if not Datalist:
                         break
-                    # print("TimesAndCounts.run: processing packet_dict list: ", Datalist)
+                    self.logger.debug("Processing packet_dict list: %s", Datalist)
 
                     ID = Datalist[transitkeys.key_id]
                     packet_dict = Datalist[transitkeys.key_packet]
@@ -127,10 +130,12 @@ class TimesAndCounts(multiprocessing.Process):
                     )
 
                     if time_window_index == self.cvar.window_index:
-                        # print("TimesAndCounts.run: add to existing time block")
+                        self.logger.debug("Add to existing time block")
                         self.cvar.num_packets += 1
                     else:
-                        # print("TimesAndCounts.run: in new time block so aggregating and creating new block: ")
+                        self.logger.debug(
+                            "In new time block so aggregating and creating new block: "
+                        )
                         self.write_window(writer, self.cvar)
                         csvfile.flush()
                         # clear variables for the next time window
@@ -148,11 +153,11 @@ class TimesAndCounts(multiprocessing.Process):
                         self.cvar,
                     )
             # it is possible that we will get this before all messages have flowed through
-            print(
-                "TimesAndCounts.run: End of packet_dict. total timed packet_count:",
-                str(pack_count),
+            self.logger.info(
+                "End of packet_dict. total timed packet_count: %d", pack_count
             )
             csvfile.close()
+        self.logger.info("Exiting thread")
 
     # calculate the new time offsets
     # fame.time_epoch - time in message.
@@ -160,7 +165,9 @@ class TimesAndCounts(multiprocessing.Process):
     def timecheck(self, frame_time_epoch, time_window_stop, time_window_index):
         # this float lh=to the second rh is msec - convert epoch time to msec
         packet_frame_time = int(float(frame_time_epoch) * 1000)
-        # print ("packet_frame_time:",str(packet_frame_time)," stop:",str(time_window_stop))
+        self.logger.debug(
+            "packet_frame_time: %d stop: %d", packet_frame_time, time_window_stop
+        )
 
         if packet_frame_time <= time_window_stop:
             # return the same time if still in the window
@@ -173,7 +180,9 @@ class TimesAndCounts(multiprocessing.Process):
             else:
                 time_window_start_ceil = time_window_stop
             time_window_stop = time_window_start_ceil + self.time_window
-            # print("TimesAndCounts.timecheck count:",str(time_window_index)," stopTime:",str(time_window_stop))
+            self.logger.debug(
+                "count: %d stopTime: %d", time_window_index, time_window_stop
+            )
 
         return (time_window_index, time_window_stop, packet_frame_time)
 
@@ -188,7 +197,7 @@ class TimesAndCounts(multiprocessing.Process):
         cvar,
     ):
 
-        # print("TimesAndCounts calculate: ",ID, Prot1, services)
+        self.logger.debug("Received %s %s %s", ID, Prot1, services)
         # Adding or changing attributes
 
         if Prot1 == "tcp":
@@ -272,7 +281,7 @@ class TimesAndCounts(multiprocessing.Process):
     def accumulate_IDs(self, ID, cvar):
         # rely on set semantics, add if not present
         cvar.IDs.add(ID)
-        # print(cvar.IDs)
+        self.logger.debug("%s", cvar.IDs)
 
     # Accumulated for TCP and IP
 
@@ -283,13 +292,12 @@ class TimesAndCounts(multiprocessing.Process):
     # map cvar to a dictonary to bind to the csv writer
     # Write one time window as a row to the CSV file
     def write_window(self, writer, one_record):
-        print(
-            "    TimesAndCounts.calculate: Window: ",
+        end_time_seconds = datetime.utcfromtimestamp(one_record.window_end_time / 1000)
+        self.logger.info(
+            "    %d packetCount: %d endTime %s",
             one_record.window_index,
-            "packetCount:",
             one_record.num_packets,
-            "endTime",
-            datetime.utcfromtimestamp(one_record.window_end_time / 1000),
+            end_time_seconds,
         )
 
         # this work but leaves unused fields empty instead of with zeros

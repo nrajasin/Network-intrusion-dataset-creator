@@ -23,6 +23,7 @@
 import multiprocessing
 import queues
 import transitkeys
+import logging
 
 # check the traffic for different services in the traffic suhc as tls,http,smtp
 
@@ -31,34 +32,38 @@ class ServiceIdentity(multiprocessing.Process):
     def __init__(self, name, inQ, outQ):
         multiprocessing.Process.__init__(self)
         self.name = name
+        self.logger = logging.getLogger(__name__)
         self.inQ = inQ
         self.outQ = outQ
 
     def run(self):
-        print("ServiceIdentity: run()")
+        self.logger.info("Starting")
         service_count = 0
         while True:
             if not self.inQ.empty():
                 Datalist = self.inQ.get()
                 if not Datalist:
                     # empty datalist means done
-                    # print("ServiceIdentity: We're done - empty dataset received")
+                    self.logger.debug("We're done - empty dataset received")
                     self.outQ.put({})
                     break
-                # print("ServiceIdentity: ",Datalist)
-                # print("ServiceIdentity: NotifiedAbout=",Datalist[0],"invoke",str(service_count)," times")
+                self.logger.debug("%s", Datalist)
+                self.logger.debug(
+                    "NotifiedAbout= %s invoke %d times",
+                    Datalist[transitkeys.key_id],
+                    service_count,
+                )
                 service_count += 1
                 ID = Datalist[transitkeys.key_id]
                 packet_dict = Datalist[transitkeys.key_packet]
                 packet_protocol = Datalist[transitkeys.key_protocol]
-                found_services = self.findServices(
-                    ID, packet_dict, packet_protocol)
-                if found_services: 
+                found_services = self.findServices(ID, packet_dict, packet_protocol)
+                if found_services:
                     Datalist[transitkeys.key_services] = found_services
                 else:
                     Datalist[transitkeys.key_services] = {"no service"}
                 self.outQ.put(Datalist)
-        print("services.serviceidentity.run: Exiting thread")
+        self.logger.info("Exiting thread")
 
     def findServices(self, ID, packet_dict, packet_protocol):
         found_services = set()
@@ -76,8 +81,7 @@ class ServiceIdentity(multiprocessing.Process):
             self.pnrp(packet_dict, found_services)
             self.wsdd_ssdp(packet_dict, found_services)
             if not found_services:
-                # uncomment to see packets not marked as services
-                # print("ServiceIdentity ",packet_dict)
+                self.logger.debug("%s", packet_dict)
                 pass
         return found_services
 
