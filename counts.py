@@ -294,7 +294,7 @@ class TimesAndCounts(multiprocessing.Process):
     def write_window(self, writer, one_record):
         end_time_seconds = datetime.utcfromtimestamp(one_record.window_end_time / 1000)
         self.logger.info(
-            "    %d packetCount: %d endTime %s",
+            "Window: %d packetCount: %d endTime: %s",
             one_record.window_index,
             one_record.num_packets,
             end_time_seconds,

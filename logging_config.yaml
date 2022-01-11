@@ -23,6 +23,7 @@ handlers:
     class: logging.handlers.WatchedFileHandler
     formatter: multi_process
     filename: ./info.log
+    # file behavior a=append w=overwrite
     mode: w
     encoding: utf-8
   error_file_handler:
@@ -30,6 +31,7 @@ handlers:
     class: logging.handlers.WatchedFileHandler
     formatter: multi_process
     filename: ./errors.log
+    # file behavior a=append w=overwrite
     mode: w
     encoding: utf-8
   debug_file_handler:
@@ -37,24 +39,28 @@ handlers:
     class: logging.handlers.WatchedFileHandler
     formatter: multi_process
     filename: ./debug.log
+    # file behavior a=append w=overwrite
     mode: w
     encoding: utf-8
 loggers:
   capture:
     #level: INFO
-    handlers: [info_file_handler, error_file_handler, debug_file_handler]
+    handlers: [error_file_handler, debug_file_handler]
   services:
     #level: INFO
-    handlers: [info_file_handler, error_file_handler, debug_file_handler]
+    handlers: [error_file_handler, debug_file_handler]
   detectors:
     #level: INFO
-    handlers: [info_file_handler, error_file_handler, debug_file_handler]
+    handlers: [error_file_handler, debug_file_handler]
   counts:
     #level: INFO
-    handlers: [info_file_handler, error_file_handler, debug_file_handler]
+    handlers: [error_file_handler, debug_file_handler]
+  loggingconfig:
+    #level: INFO
+    handlers: [error_file_handler, debug_file_handler]
   __main__:
     #level: INFO
-    handlers: [info_file_handler, error_file_handler, debug_file_handler]
+    handlers: [error_file_handler, debug_file_handler]
 
 root:
   level: INFO
