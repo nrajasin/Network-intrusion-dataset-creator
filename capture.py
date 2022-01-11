@@ -41,8 +41,6 @@ class PacketCapture(multiprocessing.Process):
         self.name = name
         self.logger = logging.getLogger(__name__)
 
-        self.logger.info("started")
-
         self.tshark_program = tshark_program
         self.input_file_name = input_file_name
         self.interface = interface
