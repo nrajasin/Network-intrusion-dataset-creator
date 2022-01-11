@@ -56,7 +56,7 @@ loggers:
     #level: INFO
     handlers: [error_file_handler, debug_file_handler]
   loggingconfig:
-    #level: INFO
+    level: DEBUG
     handlers: [error_file_handler, debug_file_handler]
   __main__:
     #level: INFO
