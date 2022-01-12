@@ -45,19 +45,16 @@ handlers:
 loggers:
   capture:
     #level: INFO
-    handlers: [error_file_handler, debug_file_handler]
+    handlers: [error_file_handler, info_file_handler, debug_file_handler]
   services:
     #level: INFO
-    handlers: [error_file_handler, debug_file_handler]
+    handlers: [error_file_handler, info_file_handler, debug_file_handler]
   detectors:
     #level: INFO
-    handlers: [error_file_handler, debug_file_handler]
+    handlers: [error_file_handler, info_file_handler, debug_file_handler]
   counts:
     #level: INFO
-    handlers: [error_file_handler, debug_file_handler]
-  loggingconfig:
-    level: DEBUG
-    handlers: [error_file_handler, debug_file_handler]
+    handlers: [error_file_handler, info_file_handler, debug_file_handler]
   __main__:
     #level: INFO
     handlers: [error_file_handler, debug_file_handler]
