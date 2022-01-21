@@ -13,7 +13,7 @@ defer==1.0.6
 dirspec==13.10
 httplib2==0.9.1
 idna==2.6
-ipython==2.4.1
+ipython==7.16.3
 Logbook==1.1.0
 louis==2.6.4
 lxml==3.5.0
