@@ -191,14 +191,19 @@ pkill -f python3
 This progam makes use of 5 cores, 4 for python Python and one for tshark.  
 It maxes out the cores so hyperthreaded cores will not count towards performance.
 
-These tests were run on a slightly slower 16 core xeon 2.2Ghz from SSD. 
+These tests were run on two different machines
+* 16 core xeon v2 2.0/2.5 Ghz from SSD. 
+* 8 core Ryzen 5800X 3.8Ghz from NVMe
 
-| Sample  | sample file size | real time                      |  analyzed packets  | time windows | sample period | python | 
-| ------- | ---------------- | -------------------------------|  ----------------  | ------------ | ------------- | ------ |
-| Crylock |   143,446,091 B  | real:1:43 user:1:40 sys:0:15   | n/a                | n/a | 10.04 | tshark (only) |
-| Crylock |   143,446,091 B  | real:1:47 user:7:14 sys:2:36   | 128778 @ 1259/sec  | 121 | 10:04 | cpython | 
-| Crylock |   143,446,091 B  | real:3:07 user 11:39 sys:1:21  | 128778 @ 754/sec   | 121 | 10:04 | pypy    | 
-| Maze    |   767,491,552 B  |                                | 573523 @ 1106/sec  | 111 | 09:21 | cpython |
+
+| Sample  | sample file size | real time                      |  analyzed packets  | time windows | sample period | python | CPU | 
+| ------- | ---------------- | -------------------------------|  ----------------  | ------------ | ------------- | ------ | --- |
+| Crylock |   143,446,091 B  | real:1:43 user:1:40 sys:0:15   | n/a                | n/a | 10.04 | tshark (only) | 16C Xeon 2.2hz SATA/SSD |
+| Crylock |   143,446,091 B  | real:1:47 user:7:14 sys:2:36   | 128778 @ 1259/sec  | 121 | 10:04 | cpython       | 16C Xeon 2.2hz SATA/SSD |
+| Crylock |   143,446,091 B  | real:3:07 user 11:39 sys:1:21  | 128778 @ 754/sec   | 121 | 10:04 | pypy          | 16C Xeon 2.2hz SATA/SSD |
+| Crylock |   143,446,091 B  | real:0:21 user 1:38 sys:0:27   | 128778 @ 6150/sec  | 121 | 10:14 | cypthon       |  8C Ryzen 5800X NVME    |
+| Razi    |   767,491,552 B  |                                | 573523 @ 1106/sec  | 111 | 09:21 | cpython       | 16C Xeon 2.2hz SATA/SSD |
+| Razi    |   767,491,552 B  | real:1:37 user 7:28 sys:2:17   | 573523 @ 5874/sec  | 111 | 09:21 | cypthon       |  8C Ryzen 5800X NVME    |
 
 This benchmark was for 2-queue 3-python process version.  It was a test to see how much impact the queues vs the uplift of having extra processors.  For this test we removed the queue between detectors and services.
 
