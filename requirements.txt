@@ -43,7 +43,7 @@ python-apt==1.1.0b1+ubuntu0.16.4.1
 python-debian==0.1.27
 python-xapp==1.0.0
 pyxdg==0.25
-reportlab==3.3.0
+reportlab==3.5.55
 requests==2.18.4
 scapy-python3==0.23
 sessioninstaller==0.0.0
