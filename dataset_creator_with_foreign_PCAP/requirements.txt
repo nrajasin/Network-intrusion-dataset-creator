@@ -44,7 +44,7 @@ python-debian==0.1.27
 python-xapp==1.0.0
 pyxdg==0.25
 reportlab==3.3.0
-requests==2.18.4
+requests==2.20.0
 scapy-python3==0.23
 sessioninstaller==0.0.0
 setproctitle==1.1.8
