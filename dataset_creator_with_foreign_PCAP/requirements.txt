@@ -16,7 +16,7 @@ idna==2.6
 ipython==2.4.1
 Logbook==1.1.0
 louis==2.6.4
-lxml==3.5.0
+lxml==4.9.1
 Mako==1.0.3
 MarkupSafe==0.23
 oauthlib==1.0.3
