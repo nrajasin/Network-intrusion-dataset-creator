@@ -17,7 +17,7 @@ ipython==2.4.1
 Logbook==1.1.0
 louis==2.6.4
 lxml==3.5.0
-Mako==1.0.3
+Mako==1.2.2
 MarkupSafe==0.23
 oauthlib==1.0.3
 onboard==1.2.0
