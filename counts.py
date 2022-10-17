@@ -85,8 +85,7 @@ class TimesAndCounts(multiprocessing.Process):
         self.logger.info("Starting")
         with open(self.csv_file_path, "w") as csvfile:
 
-            writer = csv.DictWriter(
-                csvfile, fieldnames=self.fieldnames, restval="0")
+            writer = csv.DictWriter(csvfile, fieldnames=self.fieldnames, restval="0")
             writer.writeheader()
             csvfile.flush()
 
@@ -103,8 +102,7 @@ class TimesAndCounts(multiprocessing.Process):
                     Datalist = self.inQ.get()
                     if not Datalist:
                         break
-                    self.logger.debug(
-                        "Processing packet_dict list: %s", Datalist)
+                    self.logger.debug("Processing packet_dict list: %s", Datalist)
 
                     ID = Datalist[transitkeys.key_id]
                     packet_dict = Datalist[transitkeys.key_packet]
@@ -123,7 +121,7 @@ class TimesAndCounts(multiprocessing.Process):
                             frame_time_epoch=packet_dict["frame.time_epoch"],
                             time_window_start=0,
                             time_window_stop=0,
-                            time_window_index=time_window_index
+                            time_window_index=time_window_index,
                         )
 
                     # determine which window index this packet is in
@@ -173,11 +171,16 @@ class TimesAndCounts(multiprocessing.Process):
     # calculate the new time offsets
     # fame.time_epoch - time in message.
     # first time slot is aligns with the first packet
-    def tumblecheck(self, frame_time_epoch, time_window_start, time_window_stop, time_window_index):
+    def tumblecheck(
+        self, frame_time_epoch, time_window_start, time_window_stop, time_window_index
+    ):
         # this float lh=to the second rh is msec - convert epoch time to msec
         packet_frame_time = int(float(frame_time_epoch) * 1000)
         self.logger.debug(
-            "packet_frame_time: %d start: %d stop: %d", packet_frame_time, time_window_start, time_window_stop
+            "packet_frame_time: %d start: %d stop: %d",
+            packet_frame_time,
+            time_window_start,
+            time_window_stop,
         )
 
         if packet_frame_time <= time_window_stop:
@@ -193,10 +196,18 @@ class TimesAndCounts(multiprocessing.Process):
                 time_window_start = time_window_stop
             time_window_stop = time_window_start + self.time_window
             self.logger.debug(
-                "count: %d startTime: %d, stopTime: %d", time_window_index, time_window_start, time_window_stop
+                "count: %d startTime: %d, stopTime: %d",
+                time_window_index,
+                time_window_start,
+                time_window_stop,
             )
 
-        return (time_window_index, time_window_start, time_window_stop, packet_frame_time)
+        return (
+            time_window_index,
+            time_window_start,
+            time_window_stop,
+            packet_frame_time,
+        )
 
     # updates the passed in cvar with values derived from packet_dict
     def calculate(
@@ -216,8 +227,7 @@ class TimesAndCounts(multiprocessing.Process):
                 packet_dict["frame.len"]
             )
             try:
-                cvar.tcp_ip_length = cvar.tcp_ip_length + \
-                    int(packet_dict["ip.len"])
+                cvar.tcp_ip_length = cvar.tcp_ip_length + int(packet_dict["ip.len"])
             except KeyError:  # does not exist in ipv6
                 cvar.tcp_ip_length = cvar.tcp_ip_length + 0
 
@@ -234,8 +244,7 @@ class TimesAndCounts(multiprocessing.Process):
                 packet_dict["frame.len"]
             )
             try:
-                cvar.udp_ip_length = cvar.udp_ip_length + \
-                    int(packet_dict["ip.len"])
+                cvar.udp_ip_length = cvar.udp_ip_length + int(packet_dict["ip.len"])
             except KeyError:  # does not exist in ipv6
                 cvar.udp_ip_length = cvar.udp_ip_length + 0
 
@@ -306,9 +315,9 @@ class TimesAndCounts(multiprocessing.Process):
     # Write one time window as a row to the CSV file
     def write_window(self, writer, one_record):
         start_time_seconds = datetime.utcfromtimestamp(
-            one_record.window_start_time / 1000)
-        end_time_seconds = datetime.utcfromtimestamp(
-            one_record.window_end_time / 1000)
+            one_record.window_start_time / 1000
+        )
+        end_time_seconds = datetime.utcfromtimestamp(one_record.window_end_time / 1000)
         self.logger.info(
             "Window: %d packetCount: %d startTime: %s endTime: %s",
             one_record.window_index,
