@@ -129,14 +129,15 @@ class TimesAndCounts(multiprocessing.Process):
                             window_index=time_window_index,
                         )
 
-                    if time_window_index == cvar.window_index:
+                    if time_window_begin == cvar.window_start_time:
+                        # if we didn't end up in the next window then just add to the current
                         self.logger.debug("Add to existing time window")
                         cvar.num_packets += 1
                     else:
                         self.logger.debug(
-                            "In new time window ( was %d) so aggregating and creating new window: %d",
-                            cvar.window_index,
-                            time_window_index,
+                            "In new time window. Flushing %d and creating new window: %d",
+                            cvar.window_start_time,
+                            time_window_begin,
                         )
                         self.write_window(writer, cvar)
                         csvfile.flush()

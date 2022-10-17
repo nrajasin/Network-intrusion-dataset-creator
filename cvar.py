@@ -27,9 +27,12 @@
 
 class windowcounts:
 
+    # msec since the epoch
     window_start_time = 0
+    # msec since the epoch
     window_end_time = 0
 
+    # mostly used for human debugging
     window_index = 1
 
     # frame.len
@@ -78,12 +81,13 @@ class windowcounts:
     # all the ports in this window
     ports = set()
 
-    num_packets = 1
+    # number of packets included in this window
+    num_packets = 0
 
     # The class "constructor" - It's actually an initializer
     # Not sure why but non primitives must be initialized
     def __init__(self, time_window_start=-1, time_window_end=-1, window_index=0):
-        self.num_packets = 1
+        self.num_packets = 0
         self.IDs = set()
         self.ports = set()
         self.window_start_time = time_window_start
