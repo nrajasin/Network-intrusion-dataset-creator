@@ -41,21 +41,21 @@ This runs as a multi-processing application with 4 python processes plus tshark
 
 ## Sample CSV output
 
-| tcp_frame_length|tcp_ip_length|tcp_length|udp_frame_length|udp_ip_length|udp_length|arp_frame_length|num_tls|num_http|num_ftp|num_ssh|num_smtp|num_dhcp|num_dns|num_nbns|num_smb|num_smb2|num_pnrp|num_wsdd|num_ssdp|num_tcp|num_udp|num_arp|num_igmp|num_connection_pairs|num_ports|num_packets|window_end_time |
-| -|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|--|-|-|-|-|-|- |
-| 0|0|0|2006|1084|1118|210|0|2|0|0|0|0|16|4|0|0|0|0|0|0|22|5|18|8|14|46|14806 |
-| 0|0|0|3479|2699|2487|0|0|5|0|0|0|0|6|15|2|0|0|0|0|0|28|0|6|4|8|34|19806 | 
-| 0|0|0|16524|2781|14822|0|0|17|0|0|0|3|4|0|1|0|0|6|0|0|33|0|9|5|13|42|24806 |
-| 0|0|0|9798|1810|8636|84|0|18|0|0|0|5|0|0|0|0|0|0|0|0|23|2|2|5|7|27|29806 | 
-| 0|0|0|16843|5915|15239|420|0|10|0|0|0|0|12|4|0|0|0|6|0|0|36|10|20|10|14|66|34806 | 
-| 0|0|0|14842|7344|12918|168|0|33|0|0|0|1|10|2|0|0|0|0|0|0|46|4|6|8|12|56|39806 | 
-| 0|0|0|8476|4324|7168|0|0|22|0|0|0|0|2|8|0|0|0|0|0|0|32|0|0|4|7|32|44806 | 
-| 0|0|0|5126|2956|4244|0|0|5|0|0|0|0|6|6|2|0|0|2|0|0|23|0|0|4|11|23|49806 | 
-| 0|0|0|2602|1535|1924|210|0|6|0|0|0|1|2|4|4|0|0|0|0|0|17|5|0|6|10|22|54806 | 
-| 0|0|0|4914|2800|4168|84|0|6|0|0|0|0|3|3|3|0|0|2|0|0|19|2|0|5|12|21|59806 | 
-| 6857|6615|6111|18677|9873|16171|504|0|16|0|0|0|7|21|2|4|0|2|4|0|13|59|12|21|16|33|105|64806 |
-| 6929|6747|6203|34439|17134|29359|420|0|31|0|0|0|5|23|30|2|0|15|6|0|13|120|10|24|15|36|167|69806 | 
-| 29150|14857|26074|15555|8969|12973|0|0|17|0|0|0|0|13|17|4|0|5|2|0|46|63|0|4|11|24|113|74806 | 
+| tcp_frame_length|tcp_ip_length|tcp_length|udp_frame_length|udp_ip_length|udp_length|arp_frame_length|num_tls|num_http|num_ftp|num_ssh|num_smtp|num_dhcp|num_dns|num_nbns|num_smb|num_smb2|num_pnrp|num_wsdd|num_ssdp|num_tcp|num_udp|num_arp|num_igmp|num_connection_pairs|num_ports|num_packets|window_start_time|window_end_time |
+| -|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|--|-|-|-|-|-|-|-|
+| 0 | 0 | 0 | 2006 | 1084 | 1118 | 210 | 0 | 2 | 0 | 0 | 0 | 0 | 16 | 4 | 0 | 0 | 0 | 0 | 1 | 0 | 22 | 5 | 18 | 8 | 14 | 46 | 14806 | 19806 |
+| 0 | 0 | 0 | 3479 | 2699 | 2487 | 0 | 0 | 5 | 0 | 0 | 0 | 0 | 6 | 15 | 2 | 0 | 0 | 0 | 2 | 0 | 28 | 0 | 6 | 4 | 8 | 34 | 19806 | 24806 |
+| 0 | 0 | 0 | 16524 | 2781 | 14822 | 0 | 0 | 17 | 0 | 0 | 0 | 3 | 4 | 0 | 1 | 0 | 0 | 6 | 16 | 0 | 33 | 0 | 9 | 5 | 13 | 42 | 24806 | 29806 |
+| 0 | 0 | 0 | 9798 | 1810 | 8636 | 84 | 0 | 18 | 0 | 0 | 0 | 5 | 0 | 0 | 0 | 0 | 0 | 0 | 18 | 0 | 23 | 2 | 2 | 5 | 7 | 27 | 29806 | 34806 |
+| 0 | 0 | 0 | 16843 | 5915 | 15239 | 420 | 0 | 10 | 0 | 0 | 0 | 0 | 12 | 4 | 0 | 0 | 0 | 6 | 7 | 0 | 36 | 10 | 20 | 10 | 14 | 66 | 34806 | 39806 |
+| 0 | 0 | 0 | 14842 | 7344 | 12918 | 168 | 0 | 33 | 0 | 0 | 0 | 1 | 10 | 2 | 0 | 0 | 0 | 0 | 15 | 0 | 46 | 4 | 6 | 8 | 12 | 56 | 39806 | 44806 |
+| 0 | 0 | 0 | 8476 | 4324 | 7168 | 0 | 0 | 22 | 0 | 0 | 0 | 0 | 2 | 8 | 0 | 0 | 0 | 0 | 11 | 0 | 32 | 0 | 0 | 4 | 7 | 32 | 44806 | 49806 |
+| 0 | 0 | 0 | 5126 | 2956 | 4244 | 0 | 0 | 5 | 0 | 0 | 0 | 0 | 6 | 6 | 2 | 0 | 0 | 2 | 3 | 0 | 23 | 0 | 0 | 4 | 11 | 23 | 49806 | 54806 |
+| 0 | 0 | 0 | 2602 | 1535 | 1924 | 210 | 0 | 6 | 0 | 0 | 0 | 1 | 2 | 4 | 4 | 0 | 0 | 0 | 4 | 0 | 17 | 5 | 0 | 6 | 10 | 22 | 54806 | 59806 |
+| 0 | 0 | 0 | 4914 | 2800 | 4168 | 84 | 0 | 6 | 0 | 0 | 0 | 0 | 3 | 3 | 3 | 0 | 0 | 2 | 3 | 0 | 19 | 2 | 0 | 5 | 12 | 21 | 59806 | 64806 |
+| 6857 | 6615 | 6111 | 18677 | 9873 | 16171 | 504 | 0 | 16 | 0 | 0 | 0 | 7 | 21 | 2 | 4 | 0 | 2 | 4 | 7 | 13 | 59 | 12 | 21 | 16 | 33 | 105 | 64806 | 69806 |
+| 6929 | 6747 | 6203 | 34439 | 17134 | 29359 | 420 | 0 | 31 | 0 | 0 | 0 | 5 | 23 | 30 | 2 | 0 | 15 | 6 | 14 | 13 | 120 | 10 | 24 | 15 | 36 | 167 | 69806 | 74806 |
+| 29150 | 14857 | 26074 | 15555 | 8969 | 12973 | 0 | 0 | 17 | 0 | 0 | 0 | 0 | 13 | 17 | 4 | 0 | 5 | 2 | 7 | 46 | 63 | 0 | 4 | 11 | 24 | 113 | 74806 | 79806 |
 
 ## Attribution
 If you are using this for research purposes please cite the publication listed below. The bibtex is as follows. 
@@ -104,9 +104,9 @@ You can find the original research paper on [researchgate](https://www.researchg
 1. Migrated from multi-threaded to multi-processors to make use of multiple cores.  A way to get around the GIL
 
 ## References
-1. Sliding time windows for network analysis https://www.youtube.com/watch?v=b3MaxbAAdDw
+1. Tumbling time windows for network analysis https://www.youtube.com/watch?v=b3MaxbAAdDw
     * http://joe.blog.freemansoft.com/2021/04/network-intrusion-features-via-sliding.html
-1. Using Python to implement sliding time windows for network analysis https://www.youtube.com/watch?v=jKgGh5a5gFA
+1. Using Python to implement tumbling time windows for network analysis https://www.youtube.com/watch?v=jKgGh5a5gFA
     * http://joe.blog.freemansoft.com/2021/04/creating-features-in-python-using.html
 
 
