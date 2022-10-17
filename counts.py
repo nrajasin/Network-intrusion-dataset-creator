@@ -78,7 +78,6 @@ class TimesAndCounts(multiprocessing.Process):
         self.csv_file_path = csv_file_path
         self.inQ = inQ
 
-        self.cvar = windowcounts()
         self.current_time = 0
 
     def run(self):
@@ -91,8 +90,9 @@ class TimesAndCounts(multiprocessing.Process):
 
             pack_count = 0
             time_window_index = 0
-            time_window_begin = 0
-            time_window_end = 0
+            time_window_begin = -1
+            time_window_end = -1
+            cvar = windowcounts()
 
             while True:
 
@@ -109,21 +109,6 @@ class TimesAndCounts(multiprocessing.Process):
                     Prot1 = Datalist[transitkeys.key_protocol]
                     services = Datalist[transitkeys.key_services]
 
-                    if pack_count == 1:
-                        # claim stop time was 0 which will cause a new window to be defined because packet time is > 0
-                        # starting time and current time set to the message frame.time_epoch field
-                        (
-                            time_window_index,
-                            time_window_begin,
-                            time_window_end,
-                            self.current_time,
-                        ) = self.tumblecheck(
-                            frame_time_epoch=packet_dict["frame.time_epoch"],
-                            time_window_start=0,
-                            time_window_stop=0,
-                            time_window_index=time_window_index,
-                        )
-
                     # determine which window index this packet is in
                     (
                         time_window_index,
@@ -136,22 +121,30 @@ class TimesAndCounts(multiprocessing.Process):
                         time_window_stop=time_window_end,
                         time_window_index=time_window_index,
                     )
+                    # total and unadultrated hack to reset the window on the first packet
+                    if pack_count == 1:
+                        cvar = self.reset_window(
+                            time_window_start=time_window_begin,
+                            time_window_end=time_window_end,
+                            window_index=time_window_index,
+                        )
 
-                    self.cvar.window_start_time = time_window_begin
-                    self.cvar.window_end_time = time_window_end
-
-                    if time_window_index == self.cvar.window_index:
+                    if time_window_index == cvar.window_index:
                         self.logger.debug("Add to existing time window")
-                        self.cvar.num_packets += 1
+                        cvar.num_packets += 1
                     else:
                         self.logger.debug(
-                            "In new time window so aggregating and creating new window: "
+                            "In new time window ( was %d) so aggregating and creating new window: %d",
+                            cvar.window_index,
+                            time_window_index,
                         )
-                        self.write_window(writer, self.cvar)
+                        self.write_window(writer, cvar)
                         csvfile.flush()
                         # clear variables for the next time window
-                        self.cvar = self.reset_window(
-                            time_window_end, self.cvar.window_index
+                        cvar = self.reset_window(
+                            time_window_start=time_window_begin,
+                            time_window_end=time_window_end,
+                            window_index=time_window_index,
                         )
 
                     self.calculate(
@@ -159,7 +152,7 @@ class TimesAndCounts(multiprocessing.Process):
                         packet_dict=packet_dict,
                         Prot1=Prot1,
                         services=services,
-                        cvar=self.cvar,
+                        cvar=cvar,
                     )
             # it is possible that we will get this before all messages have flowed through
             self.logger.info(
@@ -190,13 +183,13 @@ class TimesAndCounts(multiprocessing.Process):
             # move to the next window
             time_window_index += 1
             # first interval starts on the first packet. all others are locked to that
-            if time_window_stop == 0:
+            if time_window_stop < 0:
                 time_window_start = packet_frame_time
             else:
                 time_window_start = time_window_stop
             time_window_stop = time_window_start + self.time_window
             self.logger.debug(
-                "count: %d startTime: %d, stopTime: %d",
+                "new window: %d startTime: %d, stopTime: %d",
                 time_window_index,
                 time_window_start,
                 time_window_stop,
@@ -338,8 +331,10 @@ class TimesAndCounts(multiprocessing.Process):
         writer.writerow(record_for_csv)
 
     # Reset all the values for this window
-    def reset_window(self, time_window_end, window_index):
+    def reset_window(self, time_window_start, time_window_end, window_index):
         cvar = windowcounts(
-            time_window_end=time_window_end, window_index=window_index + 1
+            time_window_start=time_window_start,
+            time_window_end=time_window_end,
+            window_index=window_index,
         )
         return cvar
