@@ -112,8 +112,8 @@ class TimesAndCounts(multiprocessing.Process):
                     services = Datalist[transitkeys.key_services]
 
                     if pack_count == 1:
-                        # claim stop time was 0 which will cause a new window to be built because packet time is > 0
-                        # starting time and current time are the message frame.time_epoch field
+                        # claim stop time was 0 which will cause a new window to be defined because packet time is > 0
+                        # starting time and current time set to the message frame.time_epoch field
                         (
                             time_window_index,
                             time_window_begin,
@@ -126,6 +126,7 @@ class TimesAndCounts(multiprocessing.Process):
                             time_window_index=time_window_index
                         )
 
+                    # determine which window index this packet is in
                     (
                         time_window_index,
                         time_window_begin,
@@ -197,6 +198,7 @@ class TimesAndCounts(multiprocessing.Process):
 
         return (time_window_index, time_window_start, time_window_stop, packet_frame_time)
 
+    # updates the passed in cvar with values derived from packet_dict
     def calculate(
         self,
         ID,

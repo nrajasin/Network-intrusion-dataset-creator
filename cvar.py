@@ -21,6 +21,7 @@
 # SOFTWARE.
 
 # cvars should only be used from counts.py
+# this was probably count vars in the original program
 # every property in here should/will end up in the csv output.
 
 
