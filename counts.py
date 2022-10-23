@@ -130,14 +130,8 @@ class TimesAndCounts(multiprocessing.Process):
                             window_index=window_index,
                         )
 
-                    # determine if we can use this window or the next one
-                    if (
-                        frame_time_epoch >= current_window.window_start_time
-                        and frame_time_epoch <= current_window.window_end_time
-                    ):
-                        # if we didn't end up in the next window then just add to the current
-                        self.logger.debug("Add to existing time window")
-                    else:
+                    # flush and create windows until we are in the one for this packet
+                    while frame_time_epoch > current_window.window_end_time:
                         self.logger.debug(
                             "In new time window. Flushing %d and creating new window: %d",
                             current_window.window_start_time,
@@ -145,12 +139,21 @@ class TimesAndCounts(multiprocessing.Process):
                         )
                         self.write_window(writer, current_window)
                         csvfile.flush()
-                        # create next time window
+                        # advance 1 window
                         window_index += 1
                         current_window = self.create_window(
                             window_start_time=window_start_time,
                             window_end_time=window_end_time,
                             window_index=window_index,
+                        )
+                        # this will advance window calculator if packet not in current window
+                        (
+                            window_start_time,
+                            window_end_time,
+                        ) = self.calculate_window_parameters(
+                            frame_time_epoch=frame_time_epoch,
+                            window_start_time=window_start_time,
+                            window_end_time=window_end_time,
                         )
 
                     # update current window current_window

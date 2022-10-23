@@ -13,19 +13,19 @@ This runs as a multi-processing application with 4 python processes plus tshark
 
 | Stage | Python Module  | | Explanation |
 | - | - | -  | - |
-| Ethernet interface _or_ pcap |                     | \| | data source for packet_dict |
-|                              | _tshark not Python_ | \| | converts to one line per packet json-sh format |
-| subprocess pipe              |                   | \| | communication between tshark and the Python program
-|                              | `PacketCapture`   | \| | reads from tshark output - massages labels |
-| sharedQ                      |                   | \| | communication Queue |
-|                              | `PacketAnalyze`   | \| | protocol detectors and protocol statistics |
-| servicesQ                    |                   | \| | communicaton Queue  |
-|                              | `ServiceIdentity` | \| | higher level TCP and UDP service counts |
-| timesQ                       |                   | \| | communicaton Queue  |
-|                              | `TimesAndCounts`  | \| | time windowing and file writer |
-| csv file                     |                   | \| | feature file for model training |
+| Ethernet interface _or_ pcap or pcapng file |                     | \| | data source for packet_dict |
+|                                             | _tshark not Python_ | \| | converts to one line per packet json-sh format |
+| subprocess pipe                             |                   | \| | communication between tshark and the Python program
+|                                             | `PacketCapture`   | \| | reads from tshark output - massages labels |
+| sharedQ                                     |                   | \| | communication Queue |
+|                                             | `PacketAnalyze`   | \| | protocol detectors and protocol statistics |
+| servicesQ                                   |                   | \| | communicaton Queue  |
+|                                             | `ServiceIdentity` | \| | higher level TCP and UDP service counts |
+| timesQ                                      |                   | \| | communicaton Queue  |
+|                                             | `TimesAndCounts`  | \| | time windowing and file writer |
+| csv file                                    |                   | \| | feature file for model training |
 
-1. `tshark` captures live data or replays data from a pcap file. It each packet as a line of text output in their ek format. I chose it because each record is on a single line so now multi-line json assembly is required. The Python processes launch it and listen to standard out.
+1. `tshark` captures live data or replays data from a pcap/pcapng file. It each packet as a line of text output in their ek format. I chose it because each record is on a single line so now multi-line json assembly is required. The Python processes launch it and listen to standard out.
 1. `PacketCapture` is a python process that reads tshark and then transforms the data to make it more consumable.  It converts the EK to true JSON and massages some of the label styles to json standard.  The final text is pushed into a message queue
 1. `PacketAnalyze` accepts the dictionary from the Queue.  It creates a node pair identifier and identifies the protocol and forwards the original data, the id and protocol to the next stage via a Queue.  PacketAnalyze also captures aggregated statistics across the run. Nothing is done with those at this time and they are lost when the program exists.
 1. `ServiceIdentity` This module reads and ID, Protocol, packet data structure.  It analyzes the packet to identify the higher-level service type of the message.  Examples include DNS, SMTP, FTP, TLS, HTTP, SMB, SMB2, etc.  The service list is added to the incoming data set and sent to a topic.
@@ -33,7 +33,6 @@ This runs as a multi-processing application with 4 python processes plus tshark
 
 ## Issues
 
-1. The Tumbling Window advance does not handle empty windows correctly. It can only advance one window at a time.
 1. A packet can be flagged as more than one services.  Services like SSDP are implemented using HTTP. That service is currently counted as both. This means you can see a HTTP with no TCP
 1. IPV6 traffic does not have a `ip.len` field.  This means that the `tcp_ip_length` value in the result set only includes ipv4 traffic.
     * This is true for TCP and UDP
@@ -146,7 +145,7 @@ Install it the way you wish.  These were my notes.
     ```
     $ python3 main.py  --help
     usage: main.py [-h] [-s SOURCEFILE] [-i INTERFACE] [-l how_long] [-o OUTFILE] [-w WINDOW]
-    Create time window statistics for pcap stream or file
+    Create time window statistics for pcap/pcapng stream or file
     optional arguments:
     -h,            --help                   show this help message and exit
     -s SOURCEFILE, --sourcefile SOURCEFILE  provide a pcap input file name instead of reading live stream
@@ -160,7 +159,7 @@ Install it the way you wish.  These were my notes.
     1. In this mode you will be running wireshark and capturing packets. These will be used to make your own dataset depending on the options you pick. 
 1. The results are stored in a CSV file.  You can override with the `--outfile` command line option
 1. You can set a time to capture the packet_dict with the `--howlong <time>` option. The default is stored in `set.py:how_long`. The time is seconds. 
-1. In this mode you can load an existing PCAP and make a dataset in csv format. Specify the path to the input pcap with `--sourcefile <path>` The default is stored in `input_file_path` in `set.py`
+1. In this mode you can load an existing .pcap/.pcapng capture file and make a dataset in csv format. Specify the path to the input pcap/pcapng capture file with `--sourcefile <path>` The default is stored in `input_file_path` in `set.py`
 1. The software allows users to define a time window for each aggregation record. Specify the time in _msec_ with the `--window <size>` offering.. TThe default is stored in  `set.py` . The time is in milliseconds. 
 
 ## Usage Notes:
@@ -173,6 +172,11 @@ chmod +x main.py
 Reads from a Razi pcap file and writes to dataset.csv
 ```
 python3 main.py --sourcefile Razi_15012021.pcap
+```
+
+Reads from the smtp-ssl.pcapng file from https://wiki.wireshark.org/SampleCaptures
+```
+python3 main.py --sourcefile smtp-ssl.pcapng
 ```
 
 ## Capturing pcap files with tshark
