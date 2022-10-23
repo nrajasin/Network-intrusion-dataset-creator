@@ -8,7 +8,7 @@ The resulting _CSV_ file contains one row of packet_dict for each time segment.
 
 ![Sliding window](https://1.bp.blogspot.com/-Lm8r_RqO_MI/YHqa7w-ywmI/AAAAAAAAEZU/5d9v4sUa4osfCQl1Z21CcTjqRQCSozgbgCLcBGAsYHQ/s696/Packet-Stream-Windowing.png)
 
-### major components
+### Major components
 This runs as a multi-processing application with 4 python processes plus tshark
 
 | Stage | Python Module  | | Explanation |
@@ -30,6 +30,11 @@ This runs as a multi-processing application with 4 python processes plus tshark
 1. `PacketAnalyze` accepts the dictionary from the Queue.  It creates a node pair identifier and identifies the protocol and forwards the original data, the id and protocol to the next stage via a Queue.  PacketAnalyze also captures aggregated statistics across the run. Nothing is done with those at this time and they are lost when the program exists.
 1. `ServiceIdentity` This module reads and ID, Protocol, packet data structure.  It analyzes the packet to identify the higher-level service type of the message.  Examples include DNS, SMTP, FTP, TLS, HTTP, SMB, SMB2, etc.  The service list is added to the incoming data set and sent to a topic.
 1. `TimesAndCounts` manages the time windows and calculates the time bucket/window statistics and writes them to output.  it reads from the inbound topic and aggregates statistics across a set of incoming packets.  The statistics are retained for a single time window and are written to csv file, one record for each time window.
+
+### Tumbling Windows
+The program creates a series of adjacent, non-overlapping, windows. Each packet is included in _just one_ window.
+Each window starts at the `start_time` until but not including the `end_time`
+* `start_time` >= `packet times` < `end_time`
 
 ## Issues
 

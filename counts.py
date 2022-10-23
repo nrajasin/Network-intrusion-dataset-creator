@@ -70,11 +70,11 @@ class TimesAndCounts(multiprocessing.Process):
         "window_end_time",
     ]
 
-    def __init__(self, name, time_window, csv_file_path, inQ):
+    def __init__(self, name, window_length_time, csv_file_path, inQ):
         multiprocessing.Process.__init__(self)
         self.name = name
         self.logger = logging.getLogger(__name__)
-        self.time_window = time_window
+        self.window_length_time = window_length_time
         self.csv_file_path = csv_file_path
         self.inQ = inQ
 
@@ -88,8 +88,6 @@ class TimesAndCounts(multiprocessing.Process):
 
             pack_count_total = 0
             window_index = 0
-            window_start_time = None
-            window_end_time = None
             current_window = None
 
             while True:
@@ -107,23 +105,26 @@ class TimesAndCounts(multiprocessing.Process):
                     packet_dict = Datalist[transitkeys.key_packet]
                     Prot1 = Datalist[transitkeys.key_protocol]
                     services = Datalist[transitkeys.key_services]
+                    # align windows on msec boundaries even though we have finer resolution
                     # convert this float in seconds to an int in msec - convert epoch time to msec
                     frame_time_epoch = int(
                         float(packet_dict["frame.time_epoch"]) * 1000
                     )
 
-                    # determine the window start time, stop time and index this packet belongs in
-                    (
-                        window_start_time,
-                        window_end_time,
-                    ) = self.calculate_window_parameters(
-                        frame_time_epoch=frame_time_epoch,
-                        window_start_time=window_start_time,
-                        window_end_time=window_end_time,
-                    )
-                    # reset the window to start on the first packet
+                    # set the window to start on the first packet
                     if current_window is None:
+                        # determine the window start time, stop time and index this packet belongs in
+                        (
+                            window_start_time,
+                            window_end_time,
+                        ) = self.calculate_window_parameters(
+                            frame_time_epoch=frame_time_epoch,
+                            window_start_time=None,
+                            window_end_time=None,
+                            window_length_time=self.window_length_time,
+                        )
                         window_index += 1
+                        # create the calculated window
                         current_window = self.create_window(
                             window_start_time=window_start_time,
                             window_end_time=window_end_time,
@@ -131,29 +132,30 @@ class TimesAndCounts(multiprocessing.Process):
                         )
 
                     # flush and create windows until we are in the one for this packet
-                    while frame_time_epoch > current_window.window_end_time:
+                    while frame_time_epoch >= current_window.window_end_time:
                         self.logger.debug(
-                            "In new time window. Flushing %d and creating new window: %d",
+                            "Flushing window %d - %d",
                             current_window.window_start_time,
-                            window_start_time,
+                            current_window.window_end_time,
                         )
                         self.write_window(writer, current_window)
                         csvfile.flush()
                         # advance 1 window
                         window_index += 1
-                        current_window = self.create_window(
-                            window_start_time=window_start_time,
-                            window_end_time=window_end_time,
-                            window_index=window_index,
-                        )
                         # this will advance window calculator if packet not in current window
                         (
                             window_start_time,
                             window_end_time,
                         ) = self.calculate_window_parameters(
                             frame_time_epoch=frame_time_epoch,
+                            window_start_time=current_window.window_start_time,
+                            window_end_time=current_window.window_end_time,
+                            window_length_time=self.window_length_time,
+                        )
+                        current_window = self.create_window(
                             window_start_time=window_start_time,
                             window_end_time=window_end_time,
+                            window_index=window_index,
                         )
 
                     # update current window current_window
@@ -162,8 +164,12 @@ class TimesAndCounts(multiprocessing.Process):
                         packet_dict=packet_dict,
                         Prot1=Prot1,
                         services=services,
-                        cvar=current_window,
+                        target_window=current_window,
                     )
+
+            if current_window.num_packets > 0:
+                self.write_window(writer, current_window)
+                csvfile.flush()
 
             # it is possible that we will get this before all messages have flowed through
             self.logger.info(
@@ -177,34 +183,37 @@ class TimesAndCounts(multiprocessing.Process):
     # first time slot is aligns with the first packet
     # return the calculated window parameters for the passed in time
     def calculate_window_parameters(
-        self, frame_time_epoch, window_start_time, window_end_time
+        self, frame_time_epoch, window_start_time, window_end_time, window_length_time
     ):
         self.logger.debug(
-            "frame_time_epoch: %d start: %d stop: %d",
+            "old window: frame_time_epoch: %d start: %d stop: %d",
             frame_time_epoch,
             window_start_time,
             window_end_time,
+            window_length_time,
         )
 
-        if window_end_time is not None and frame_time_epoch <= window_end_time:
+        if window_end_time is not None and frame_time_epoch < window_end_time:
             # return the same time if still in the window
+            window_start_time_new = window_start_time
+            window_end_time_new = window_end_time
             pass
         else:
             # move to the next window
             # first interval starts on the first packet. all others are locked to that
             if window_end_time is None:
-                window_start_time = frame_time_epoch
+                window_start_time_new = frame_time_epoch
             else:
-                window_start_time = window_end_time
-            window_end_time = window_start_time + self.time_window
+                window_start_time_new = window_end_time
+            window_end_time_new = window_start_time_new + window_length_time
             self.logger.debug(
                 "new window: %d startTime: %d, stopTime: %d",
-                window_start_time,
-                window_end_time,
+                window_start_time_new,
+                window_end_time_new,
             )
 
         # return the calculated window parameters for the passed in time
-        return (window_start_time, window_end_time)
+        return (window_start_time_new, window_end_time_new)
 
     # updates the passed in cvar with values derived from packet_dict
     def calculate_and_populate(
@@ -213,104 +222,112 @@ class TimesAndCounts(multiprocessing.Process):
         packet_dict,
         Prot1,
         services,
-        cvar,
+        target_window,
     ):
 
         self.logger.debug("Received %s %s %s", ID, Prot1, services)
         # Adding or changing attributes
 
-        cvar.num_packets += 1
+        target_window.num_packets += 1
 
         if Prot1 == "tcp":
-            cvar.tcp_frame_length = cvar.tcp_frame_length + int(
+            target_window.tcp_frame_length = target_window.tcp_frame_length + int(
                 packet_dict["frame.len"]
             )
             try:
-                cvar.tcp_ip_length = cvar.tcp_ip_length + int(packet_dict["ip.len"])
+                target_window.tcp_ip_length = target_window.tcp_ip_length + int(
+                    packet_dict["ip.len"]
+                )
             except KeyError:  # does not exist in ipv6
-                cvar.tcp_ip_length = cvar.tcp_ip_length + 0
+                target_window.tcp_ip_length = target_window.tcp_ip_length + 0
 
-            cvar.tcp_length = cvar.tcp_length + int(packet_dict["tcp.len"])
-            self.count_services(services, cvar)
-            cvar.num_tcp += 1
-            self.accumulate_IDs(ID, cvar)
+            target_window.tcp_length = target_window.tcp_length + int(
+                packet_dict["tcp.len"]
+            )
+            self.count_services(services, target_window)
+            target_window.num_tcp += 1
+            self.accumulate_IDs(ID, target_window)
             self.accumulate_ports(
-                [packet_dict["tcp.srcport"], packet_dict["tcp.dstport"]], cvar
+                [packet_dict["tcp.srcport"], packet_dict["tcp.dstport"]], target_window
             )
 
         elif Prot1 == "udp":
-            cvar.udp_frame_length = cvar.udp_frame_length + int(
+            target_window.udp_frame_length = target_window.udp_frame_length + int(
                 packet_dict["frame.len"]
             )
             try:
-                cvar.udp_ip_length = cvar.udp_ip_length + int(packet_dict["ip.len"])
+                target_window.udp_ip_length = target_window.udp_ip_length + int(
+                    packet_dict["ip.len"]
+                )
             except KeyError:  # does not exist in ipv6
-                cvar.udp_ip_length = cvar.udp_ip_length + 0
+                target_window.udp_ip_length = target_window.udp_ip_length + 0
 
-            cvar.udp_length = cvar.udp_length + int(packet_dict["udp.length"])
-            self.count_services(services, cvar)
-            cvar.num_udp += 1
-            self.accumulate_IDs(ID, cvar)
+            target_window.udp_length = target_window.udp_length + int(
+                packet_dict["udp.length"]
+            )
+            self.count_services(services, target_window)
+            target_window.num_udp += 1
+            self.accumulate_IDs(ID, target_window)
             self.accumulate_ports(
-                [packet_dict["udp.srcport"], packet_dict["udp.dstport"]], cvar
+                [packet_dict["udp.srcport"], packet_dict["udp.dstport"]], target_window
             )
 
         elif Prot1 == "arp":
-            cvar.arp_frame_length = cvar.arp_frame_length + int(
+            target_window.arp_frame_length = target_window.arp_frame_length + int(
                 packet_dict["frame.len"]
             )
-            cvar.num_arp += 1
-            self.accumulate_IDs(ID, cvar)
+            target_window.num_arp += 1
+            self.accumulate_IDs(ID, target_window)
         elif Prot1 == "igmp":
             # TODO become more clever about igmp if needed
-            cvar.num_igmp += 1
+            target_window.num_igmp += 1
 
     # an individual packet could be more than one thing.  Some SSDP traffic has HTTP over UDP
-    def count_services(self, slist, cvar):
+    def count_services(self, slist, target_window):
 
         # should a packet only fit in one bucket?
         # is HTTP a service or a ?? that others can use?
         if "http" in slist:
-            cvar.num_http += 1
+            target_window.num_http += 1
 
         if "tls" in slist:
-            cvar.num_tls += 1
+            target_window.num_tls += 1
 
         if "ftp" in slist:
-            cvar.num_ftp += 1
+            target_window.num_ftp += 1
         elif "ssh" in slist:
-            cvar.num_ssh += 1
+            target_window.num_ssh += 1
         elif "dns" in slist:
-            cvar.num_dns += 1
+            target_window.num_dns += 1
         elif "smtp" in slist:
-            cvar.num_smtp += 1
+            target_window.num_smtp += 1
         elif "dhcp" in slist:
-            cvar.num_dhcp += 1
+            target_window.num_dhcp += 1
         elif "nbns" in slist:
-            cvar.num_nbns += 1
+            target_window.num_nbns += 1
         elif "smb2" in slist:
-            cvar.num_smb2 += 1
+            target_window.num_smb2 += 1
         elif "smb" in slist:
-            cvar.num_smb += 1
+            target_window.num_smb += 1
         elif "pnrp" in slist:
-            cvar.num_pnrp += 1
+            target_window.num_pnrp += 1
         elif "wsdd" in slist:
-            cvar.num_wsdd += 1
+            target_window.num_wsdd += 1
         elif "ssdp" in slist:
-            cvar.num_ssdp += 1
+            target_window.num_ssdp += 1
 
-    def accumulate_IDs(self, ID, cvar):
+    def accumulate_IDs(self, ID, target_window):
         # rely on set semantics, add if not present
-        cvar.IDs.add(ID)
-        self.logger.debug("%s", cvar.IDs)
+        target_window.IDs.add(ID)
+        self.logger.debug("%s", target_window.IDs)
 
     # Accumulated for TCP and IP
 
-    def accumulate_ports(self, ports, cvar):
+    def accumulate_ports(self, ports, target_window):
         # rely on set symantics, add array elements if not present
-        cvar.ports.update(ports)
+        target_window.ports.update(ports)
 
-    # map cvar to a dictonary to bind to the csv writer
+    # map target_window to a dictonary to bind to the csv writer
     # Write one time window as a row to the CSV file
     def write_window(self, writer, one_record):
         start_time_seconds = datetime.utcfromtimestamp(
@@ -338,6 +355,11 @@ class TimesAndCounts(multiprocessing.Process):
 
     # Reset all the values for this window
     def create_window(self, window_start_time, window_end_time, window_index):
+        self.logger.debug(
+            "Creating new window: %d - %d",
+            window_start_time,
+            window_end_time,
+        )
         new_window = windowcounts(
             window_start_time=window_start_time,
             window_end_time=window_end_time,
