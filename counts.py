@@ -78,8 +78,6 @@ class TimesAndCounts(multiprocessing.Process):
         self.csv_file_path = csv_file_path
         self.inQ = inQ
 
-        self.current_time = 0
-
     def run(self):
         self.logger.info("Starting")
         with open(self.csv_file_path, "w") as csvfile:
@@ -88,123 +86,125 @@ class TimesAndCounts(multiprocessing.Process):
             writer.writeheader()
             csvfile.flush()
 
-            pack_count = 0
-            time_window_index = 0
-            time_window_begin = -1
-            time_window_end = -1
-            cvar = windowcounts()
+            pack_count_total = 0
+            window_index = 0
+            window_start_time = -1
+            window_end_time = -1
+            current_window = None
 
             while True:
 
                 if not self.inQ.empty():
 
-                    pack_count += 1
+                    # read from teh queue
                     Datalist = self.inQ.get()
                     if not Datalist:
                         break
                     self.logger.debug("Processing packet_dict list: %s", Datalist)
+                    pack_count_total += 1
 
                     ID = Datalist[transitkeys.key_id]
                     packet_dict = Datalist[transitkeys.key_packet]
                     Prot1 = Datalist[transitkeys.key_protocol]
                     services = Datalist[transitkeys.key_services]
-
-                    # determine which window index this packet is in
-                    (
-                        time_window_index,
-                        time_window_begin,
-                        time_window_end,
-                        self.current_time,
-                    ) = self.tumblecheck(
-                        frame_time_epoch=packet_dict["frame.time_epoch"],
-                        time_window_start=time_window_begin,
-                        time_window_stop=time_window_end,
-                        time_window_index=time_window_index,
+                    # convert this float in seconds to an int in msec - convert epoch time to msec
+                    frame_time_epoch = int(
+                        float(packet_dict["frame.time_epoch"]) * 1000
                     )
-                    # total and unadultrated hack to reset the window on the first packet
-                    if pack_count == 1:
-                        cvar = self.reset_window(
-                            time_window_start=time_window_begin,
-                            time_window_end=time_window_end,
-                            window_index=time_window_index,
+
+                    # determine the window start time, stop time and index this packet belongs in
+                    (
+                        window_start_time,
+                        window_end_time,
+                    ) = self.calculate_window_parameters(
+                        frame_time_epoch=frame_time_epoch,
+                        window_start_time=window_start_time,
+                        window_end_time=window_end_time,
+                    )
+                    # reset the window to start on the first packet
+                    if current_window is None:
+                        window_index += 1
+                        current_window = self.create_window(
+                            window_start_time=window_start_time,
+                            window_end_time=window_end_time,
+                            window_index=window_index,
                         )
 
-                    if time_window_begin == cvar.window_start_time:
+                    # determine if we can use this window or the next one
+                    if (
+                        frame_time_epoch >= current_window.window_start_time
+                        and frame_time_epoch <= current_window.window_end_time
+                    ):
                         # if we didn't end up in the next window then just add to the current
                         self.logger.debug("Add to existing time window")
-                        cvar.num_packets += 1
                     else:
                         self.logger.debug(
                             "In new time window. Flushing %d and creating new window: %d",
-                            cvar.window_start_time,
-                            time_window_begin,
+                            current_window.window_start_time,
+                            window_start_time,
                         )
-                        self.write_window(writer, cvar)
+                        self.write_window(writer, current_window)
                         csvfile.flush()
-                        # clear variables for the next time window
-                        cvar = self.reset_window(
-                            time_window_start=time_window_begin,
-                            time_window_end=time_window_end,
-                            window_index=time_window_index,
+                        # create next time window
+                        window_index += 1
+                        current_window = self.create_window(
+                            window_start_time=window_start_time,
+                            window_end_time=window_end_time,
+                            window_index=window_index,
                         )
 
-                    self.calculate(
+                    # update current window current_window
+                    self.calculate_and_populate(
                         ID=ID,
                         packet_dict=packet_dict,
                         Prot1=Prot1,
                         services=services,
-                        cvar=cvar,
+                        cvar=current_window,
                     )
+
             # it is possible that we will get this before all messages have flowed through
             self.logger.info(
-                "End of packet_dict. total timed packet_count: %d", pack_count
+                "End of packet_dict. total timed packet_count: %d", pack_count_total
             )
             csvfile.close()
         self.logger.info("Exiting thread")
 
     # calculate the new time offsets
-    # fame.time_epoch - time in message.
+    # frame_time_epoch - time in message in msec from epoch
     # first time slot is aligns with the first packet
-    def tumblecheck(
-        self, frame_time_epoch, time_window_start, time_window_stop, time_window_index
+    # return the calculated window parameters for the passed in time
+    def calculate_window_parameters(
+        self, frame_time_epoch, window_start_time, window_end_time
     ):
-        # this float lh=to the second rh is msec - convert epoch time to msec
-        packet_frame_time = int(float(frame_time_epoch) * 1000)
         self.logger.debug(
-            "packet_frame_time: %d start: %d stop: %d",
-            packet_frame_time,
-            time_window_start,
-            time_window_stop,
+            "frame_time_epoch: %d start: %d stop: %d",
+            frame_time_epoch,
+            window_start_time,
+            window_end_time,
         )
 
-        if packet_frame_time <= time_window_stop:
+        if frame_time_epoch <= window_end_time:
             # return the same time if still in the window
             pass
         else:
             # move to the next window
-            time_window_index += 1
             # first interval starts on the first packet. all others are locked to that
-            if time_window_stop < 0:
-                time_window_start = packet_frame_time
+            if window_end_time < 0:
+                window_start_time = frame_time_epoch
             else:
-                time_window_start = time_window_stop
-            time_window_stop = time_window_start + self.time_window
+                window_start_time = window_end_time
+            window_end_time = window_start_time + self.time_window
             self.logger.debug(
                 "new window: %d startTime: %d, stopTime: %d",
-                time_window_index,
-                time_window_start,
-                time_window_stop,
+                window_start_time,
+                window_end_time,
             )
 
-        return (
-            time_window_index,
-            time_window_start,
-            time_window_stop,
-            packet_frame_time,
-        )
+        # return the calculated window parameters for the passed in time
+        return (window_start_time, window_end_time)
 
     # updates the passed in cvar with values derived from packet_dict
-    def calculate(
+    def calculate_and_populate(
         self,
         ID,
         packet_dict,
@@ -215,6 +215,8 @@ class TimesAndCounts(multiprocessing.Process):
 
         self.logger.debug("Received %s %s %s", ID, Prot1, services)
         # Adding or changing attributes
+
+        cvar.num_packets += 1
 
         if Prot1 == "tcp":
             cvar.tcp_frame_length = cvar.tcp_frame_length + int(
@@ -320,7 +322,7 @@ class TimesAndCounts(multiprocessing.Process):
             end_time_seconds,
         )
 
-        # this work but leaves unused fields empty instead of with zeros
+        # this works but leaves unused fields empty instead of with zeros
         # we can tell the csv writer to fill empty cells with zeros
         record_for_csv = one_record.__dict__.copy()
         record_for_csv.pop("IDs", None)
@@ -332,10 +334,10 @@ class TimesAndCounts(multiprocessing.Process):
         writer.writerow(record_for_csv)
 
     # Reset all the values for this window
-    def reset_window(self, time_window_start, time_window_end, window_index):
-        cvar = windowcounts(
-            time_window_start=time_window_start,
-            time_window_end=time_window_end,
+    def create_window(self, window_start_time, window_end_time, window_index):
+        new_window = windowcounts(
+            window_start_time=window_start_time,
+            window_end_time=window_end_time,
             window_index=window_index,
         )
-        return cvar
+        return new_window

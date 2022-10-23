@@ -86,10 +86,10 @@ class windowcounts:
 
     # The class "constructor" - It's actually an initializer
     # Not sure why but non primitives must be initialized
-    def __init__(self, time_window_start=-1, time_window_end=-1, window_index=0):
+    def __init__(self, window_start_time=-1, window_end_time=-1, window_index=0):
         self.num_packets = 0
         self.IDs = set()
         self.ports = set()
-        self.window_start_time = time_window_start
-        self.window_end_time = time_window_end
+        self.window_start_time = window_start_time
+        self.window_end_time = window_end_time
         self.window_index = window_index
