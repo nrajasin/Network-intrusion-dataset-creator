@@ -117,10 +117,10 @@ class TimesAndCounts(multiprocessing.Process):
                         (
                             window_start_time,
                             window_end_time,
-                        ) = self.calculate_window_parameters(
+                        ) = self.calculate_tumbling_window(
                             frame_time_epoch=frame_time_epoch,
-                            window_start_time=None,
-                            window_end_time=None,
+                            window_start_time_previous=None,
+                            window_end_time_previous=None,
                             window_length_time=self.window_length_time,
                         )
                         window_index += 1
@@ -146,10 +146,10 @@ class TimesAndCounts(multiprocessing.Process):
                         (
                             window_start_time,
                             window_end_time,
-                        ) = self.calculate_window_parameters(
+                        ) = self.calculate_tumbling_window(
                             frame_time_epoch=frame_time_epoch,
-                            window_start_time=current_window.window_start_time,
-                            window_end_time=current_window.window_end_time,
+                            window_start_time_previous=current_window.window_start_time,
+                            window_end_time_previous=current_window.window_end_time,
                             window_length_time=self.window_length_time,
                         )
                         current_window = self.create_window(
@@ -159,7 +159,7 @@ class TimesAndCounts(multiprocessing.Process):
                         )
 
                     # update current window current_window
-                    self.calculate_and_populate(
+                    self.analyze_update_window(
                         ID=ID,
                         packet_dict=packet_dict,
                         Prot1=Prot1,
@@ -182,29 +182,36 @@ class TimesAndCounts(multiprocessing.Process):
     # frame_time_epoch - time in message in msec from epoch
     # first time slot is aligns with the first packet
     # return the calculated window parameters for the passed in time
-    def calculate_window_parameters(
-        self, frame_time_epoch, window_start_time, window_end_time, window_length_time
+    def calculate_tumbling_window(
+        self,
+        frame_time_epoch,
+        window_start_time_previous,
+        window_end_time_previous,
+        window_length_time,
     ):
         self.logger.debug(
             "old window: frame_time_epoch: %d start: %d stop: %d",
             frame_time_epoch,
-            window_start_time,
-            window_end_time,
+            window_start_time_previous,
+            window_end_time_previous,
             window_length_time,
         )
 
-        if window_end_time is not None and frame_time_epoch < window_end_time:
+        if (
+            window_end_time_previous is not None
+            and frame_time_epoch < window_end_time_previous
+        ):
             # return the same time if still in the window
-            window_start_time_new = window_start_time
-            window_end_time_new = window_end_time
+            window_start_time_new = window_start_time_previous
+            window_end_time_new = window_end_time_previous
             pass
         else:
             # move to the next window
             # first interval starts on the first packet. all others are locked to that
-            if window_end_time is None:
+            if window_end_time_previous is None:
                 window_start_time_new = frame_time_epoch
             else:
-                window_start_time_new = window_end_time
+                window_start_time_new = window_end_time_previous
             window_end_time_new = window_start_time_new + window_length_time
             self.logger.debug(
                 "new window: %d startTime: %d, stopTime: %d",
@@ -216,7 +223,7 @@ class TimesAndCounts(multiprocessing.Process):
         return (window_start_time_new, window_end_time_new)
 
     # updates the passed in cvar with values derived from packet_dict
-    def calculate_and_populate(
+    def analyze_update_window(
         self,
         ID,
         packet_dict,
