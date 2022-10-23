@@ -88,8 +88,8 @@ class TimesAndCounts(multiprocessing.Process):
 
             pack_count_total = 0
             window_index = 0
-            window_start_time = -1
-            window_end_time = -1
+            window_start_time = None
+            window_end_time = None
             current_window = None
 
             while True:
@@ -183,13 +183,13 @@ class TimesAndCounts(multiprocessing.Process):
             window_end_time,
         )
 
-        if frame_time_epoch <= window_end_time:
+        if window_end_time is not None and frame_time_epoch <= window_end_time:
             # return the same time if still in the window
             pass
         else:
             # move to the next window
             # first interval starts on the first packet. all others are locked to that
-            if window_end_time < 0:
+            if window_end_time is None:
                 window_start_time = frame_time_epoch
             else:
                 window_start_time = window_end_time
