@@ -140,6 +140,8 @@ Install it the way you wish.  These were my notes.
     ```
     
 1. The requirements.txt file has been deleted because the current code base does not seem to require any additional libraries. Create a new one if you find you need it and submit a pull request.
+    1. If running pypy then 
+        1. ` pypy3 -mpip install pyyaml`
 1. `tshark` is installed, reachable and, on the PATH.  This python program for tshar with somehting like:
     ```
     cmd = "sudo tshark -r /path/filename -V -T json"
@@ -209,18 +211,21 @@ These tests were run on two different machines
 
 | Sample  | sample file size | real time                      |  analyzed packets  | time windows | sample period | python | CPU | 
 | ------- | ---------------- | -------------------------------|  ----------------  | ------------ | ------------- | ------ | --- |
-| Crylock |   143,446,091 B  | real:1:43 user:1:40 sys:0:15   | n/a                | n/a | 10.04 | tshark (only) | 16C Xeon 2.2hz SATA/SSD |
-| Crylock |   143,446,091 B  | real:1:47 user:7:14 sys:2:36   | 128778 @ 1259/sec  | 121 | 10:04 | cpython       | 16C Xeon 2.2hz SATA/SSD |
-| Crylock |   143,446,091 B  | real:3:07 user 11:39 sys:1:21  | 128778 @ 754/sec   | 121 | 10:04 | pypy          | 16C Xeon 2.2hz SATA/SSD |
-| Crylock |   143,446,091 B  | real:0:21 user 1:38 sys:0:27   | 128778 @ 6150/sec  | 121 | 10:14 | cypthon       |  8C Ryzen 5800X NVME    |
-| Razi    |   767,491,552 B  |                                | 573523 @ 1106/sec  | 111 | 09:21 | cpython       | 16C Xeon 2.2hz SATA/SSD |
-| Razi    |   767,491,552 B  | real:1:37 user 7:28 sys:2:17   | 573523 @ 5874/sec  | 111 | 09:21 | cypthon       |  8C Ryzen 5800X NVME    |
+| Crylock |   143,446,091 B  | real 1:43 user 1:40  sys 0:15  | n/a                | n/a | 10.04 | tshark (only) | 16C Xeon E5 2640 V2 2.2Ghz SATA/SSD |
+| Crylock |   143,446,091 B  | real 1:47 user 7:14  sys 2:36  | 128778 @ 1259/sec  | 122 | 10:04 | cpython       | 16C Xeon E5 2640 V2 2.2Ghz SATA/SSD |
+| Crylock |   143,446,091 B  | real 1:15 user 5:17  sys 2:07  | 128778 @ 1578/sec  | 122 | 10:04 | cpython       | 20C Xeon E5 2680 V2 2.8Ghz SATA/SSD |
+| Crylock |   143,446,091 B  | real 3:07 user 11:39 sys 1:21  | 128778 @ 754/sec   | 122 | 10:04 | pypy 3.6      | 16C Xeon E5 2640 V2 2.2Ghz SATA/SSD |
+| Crylock |   143,446,091 B  | real 2:18 user 08:29 sys 0:50  | 128778 @ 1035/sec  | 122 | 10:04 | pypy 3.7      | 20C Xeon E5 2580 V2 2.8 Ghz SATA/SSD |
+| Crylock |   143,446,091 B  | real 0:21 user 1:38  sys 0:27  | 128778 @ 6150/sec  | 122 | 10:14 | cypthon       |  8C Ryzen 5800X NVME    |
+| Razi    |   767,491,552 B  |                                | 573523 @ 1106/sec  | 112 | 09:21 | cpython       | 16C Xeon E5 2640 V2 2.2Ghz SATA/SSD |
+| Razi    |   767,491,552 B  | real 6:07 user 25:31 sys 11:17 | 573523 @ 1562/sec  | 112 | 09:21 | cpython       | 20C Xeon E5 2680 V2 2.8Ghz SATA/SSD |
+| Razi    |   767,491,552 B  | real:1:37 user 7:28 sys:2:17   | 573523 @ 5874/sec  | 112 | 09:21 | cypthon       |  8C Ryzen 5800X NVME    |
 
 This benchmark was for 2-queue 3-python process version.  It was a test to see how much impact the queues vs the uplift of having extra processors.  For this test we removed the queue between detectors and services.
 
 | Sample  | sample file size | real time                      |  analyzed packets  | time windows | sample period | python |
 | ------- | ---------------- | -------------------------------|  ----------------  | ------------ | ------------- | ------ |
-| Crylock |   143,446,091 b  | real:1:47 user:6:07 sys:1:22   | 128778 @ 1201/sec  | 121 | 10:04 | cpython |
+| Crylock |   143,446,091 b  | real:1:47 user:6:07 sys:1:22   | 128778 @ 1201/sec  | 122 | 10:04 | cpython |
 | Maze    | 1,045,083,415 b  | real:11:21 user:38:38 sys:8:33 | 770,987 @ 1131/sec | 94  | 7:59  | cpython |
 
 1. Analysis times are linear with the number of packets processed
