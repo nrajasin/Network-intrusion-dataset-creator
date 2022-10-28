@@ -28,6 +28,7 @@ import csv
 from datetime import datetime
 from datetime import time
 from cvar import windowcounts
+from tumblingwindow import TumblingWindow
 import transitkeys
 import logging
 
@@ -77,6 +78,9 @@ class TimesAndCounts(multiprocessing.Process):
         self.window_length_time = window_length_time
         self.csv_file_path = csv_file_path
         self.inQ = inQ
+        self.tumbling_window = TumblingWindow(
+            window_length_time=window_length_time, window_length_count=None
+        )
 
     def run(self):
         self.logger.info("Starting")
@@ -117,11 +121,11 @@ class TimesAndCounts(multiprocessing.Process):
                         (
                             window_start_time,
                             window_end_time,
-                        ) = self.calculate_tumbling_window(
+                        ) = self.tumbling_window.calculate_tumbling_window(
                             frame_time_epoch=frame_time_epoch,
                             window_start_time_previous=None,
                             window_end_time_previous=None,
-                            window_length_time=self.window_length_time,
+                            window_count_previous=None,
                         )
                         window_index += 1
                         # create the calculated window
@@ -132,7 +136,12 @@ class TimesAndCounts(multiprocessing.Process):
                         )
 
                     # flush and create windows until we are in the one for this packet
-                    while frame_time_epoch >= current_window.window_end_time:
+                    while self.tumbling_window.is_outside_current_window(
+                        frame_time_epoch=frame_time_epoch,
+                        window_start_time_previous=current_window.window_start_time,
+                        window_end_time_previous=current_window.window_end_time,
+                        window_count_previous=current_window.num_packets,
+                    ):
                         self.logger.debug(
                             "Flushing window %d - %d",
                             current_window.window_start_time,
@@ -146,11 +155,11 @@ class TimesAndCounts(multiprocessing.Process):
                         (
                             window_start_time,
                             window_end_time,
-                        ) = self.calculate_tumbling_window(
+                        ) = self.tumbling_window.calculate_tumbling_window(
                             frame_time_epoch=frame_time_epoch,
                             window_start_time_previous=current_window.window_start_time,
                             window_end_time_previous=current_window.window_end_time,
-                            window_length_time=self.window_length_time,
+                            window_count_previous=current_window.num_packets,
                         )
                         current_window = self.create_window(
                             window_start_time=window_start_time,
@@ -177,50 +186,6 @@ class TimesAndCounts(multiprocessing.Process):
             )
             csvfile.close()
         self.logger.info("Exiting thread")
-
-    # calculate the new time offsets
-    # frame_time_epoch - time in message in msec from epoch
-    # first time slot is aligns with the first packet
-    # return the calculated window parameters for the passed in time
-    def calculate_tumbling_window(
-        self,
-        frame_time_epoch,
-        window_start_time_previous,
-        window_end_time_previous,
-        window_length_time,
-    ):
-        self.logger.debug(
-            "old window: frame_time_epoch: %d start: %d stop: %d",
-            frame_time_epoch,
-            window_start_time_previous,
-            window_end_time_previous,
-            window_length_time,
-        )
-
-        if (
-            window_end_time_previous is not None
-            and frame_time_epoch < window_end_time_previous
-        ):
-            # return the same time if still in the window
-            window_start_time_new = window_start_time_previous
-            window_end_time_new = window_end_time_previous
-            pass
-        else:
-            # move to the next window
-            # first interval starts on the first packet. all others are locked to that
-            if window_end_time_previous is None:
-                window_start_time_new = frame_time_epoch
-            else:
-                window_start_time_new = window_end_time_previous
-            window_end_time_new = window_start_time_new + window_length_time
-            self.logger.debug(
-                "new window: %d startTime: %d, stopTime: %d",
-                window_start_time_new,
-                window_end_time_new,
-            )
-
-        # return the calculated window parameters for the passed in time
-        return (window_start_time_new, window_end_time_new)
 
     # updates the passed in cvar with values derived from packet_dict
     def analyze_update_window(
