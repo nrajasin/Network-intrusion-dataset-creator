@@ -26,6 +26,9 @@ class AppSettings:
     # sliding window size
     time_window = 5000  # msec
 
+    # sliding window size in packet
+    packet_window = None
+
     # when streaming - how long to run in seconds
     how_long = 120
 

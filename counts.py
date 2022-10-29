@@ -71,7 +71,9 @@ class TimesAndCounts(multiprocessing.Process):
         "window_end_time",
     ]
 
-    def __init__(self, name, window_length_time, csv_file_path, inQ):
+    def __init__(
+        self, name, window_length_time, window_length_count, csv_file_path, inQ
+    ):
         multiprocessing.Process.__init__(self)
         self.name = name
         self.logger = logging.getLogger(__name__)
@@ -79,7 +81,8 @@ class TimesAndCounts(multiprocessing.Process):
         self.csv_file_path = csv_file_path
         self.inQ = inQ
         self.tumbling_window = TumblingWindow(
-            window_length_time=window_length_time, window_length_count=None
+            window_length_time=window_length_time,
+            window_length_count=window_length_count,
         )
 
     def run(self):
@@ -98,6 +101,7 @@ class TimesAndCounts(multiprocessing.Process):
 
                 if not self.inQ.empty():
 
+                    window_start_time = None
                     # read from teh queue
                     Datalist = self.inQ.get()
                     if not Datalist:
@@ -118,20 +122,17 @@ class TimesAndCounts(multiprocessing.Process):
                     # set the window to start on the first packet
                     if current_window is None:
                         # determine the window start time, stop time and index this packet belongs in
-                        (
-                            window_start_time,
-                            window_end_time,
-                        ) = self.tumbling_window.calculate_tumbling_window(
-                            frame_time_epoch=frame_time_epoch,
-                            window_start_time_previous=None,
-                            window_end_time_previous=None,
-                            window_count_previous=None,
+                        window_start_time = (
+                            self.tumbling_window.calculate_tumbling_window(
+                                frame_time_epoch=frame_time_epoch,
+                                window_start_time_previous=None,
+                                window_count_previous=None,
+                            )
                         )
                         window_index += 1
                         # create the calculated window
                         current_window = self.create_window(
                             window_start_time=window_start_time,
-                            window_end_time=window_end_time,
                             window_index=window_index,
                         )
 
@@ -139,7 +140,6 @@ class TimesAndCounts(multiprocessing.Process):
                     while self.tumbling_window.is_outside_current_window(
                         frame_time_epoch=frame_time_epoch,
                         window_start_time_previous=current_window.window_start_time,
-                        window_end_time_previous=current_window.window_end_time,
                         window_count_previous=current_window.num_packets,
                     ):
                         self.logger.debug(
@@ -152,18 +152,14 @@ class TimesAndCounts(multiprocessing.Process):
                         # advance 1 window
                         window_index += 1
                         # this will advance window calculator if packet not in current window
-                        (
-                            window_start_time,
-                            window_end_time,
-                        ) = self.tumbling_window.calculate_tumbling_window(
+
+                        window_start_time = self.tumbling_window.calculate_tumbling_window(
                             frame_time_epoch=frame_time_epoch,
                             window_start_time_previous=current_window.window_start_time,
-                            window_end_time_previous=current_window.window_end_time,
                             window_count_previous=current_window.num_packets,
                         )
                         current_window = self.create_window(
                             window_start_time=window_start_time,
-                            window_end_time=window_end_time,
                             window_index=window_index,
                         )
 
@@ -201,6 +197,10 @@ class TimesAndCounts(multiprocessing.Process):
         # Adding or changing attributes
 
         target_window.num_packets += 1
+
+        # set the window end time to the time of the last packet
+        frame_time_epoch = int(float(packet_dict["frame.time_epoch"]) * 1000)
+        target_window.window_end_time = frame_time_epoch
 
         if Prot1 == "tcp":
             target_window.tcp_frame_length = target_window.tcp_frame_length + int(
@@ -326,15 +326,14 @@ class TimesAndCounts(multiprocessing.Process):
         writer.writerow(record_for_csv)
 
     # Reset all the values for this window
-    def create_window(self, window_start_time, window_end_time, window_index):
+    def create_window(self, window_start_time, window_index):
         self.logger.debug(
-            "Creating new window: %d - %d",
+            "Creating new window: %d start %d ",
+            window_index,
             window_start_time,
-            window_end_time,
         )
         new_window = windowcounts(
             window_start_time=window_start_time,
-            window_end_time=window_end_time,
             window_index=window_index,
         )
         return new_window

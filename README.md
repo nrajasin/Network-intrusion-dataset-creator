@@ -33,8 +33,10 @@ This runs as a multi-processing application with 4 python processes plus tshark
 
 ### Tumbling Windows
 The program creates a series of adjacent, non-overlapping, windows. Each packet is included in _just one_ window.
-Each window starts at the `start_time` until but not including the `end_time`
-* `start_time` >= `packet times` < `end_time`
+Each window starts at the `start_time` until but not including the `start_time + window_width`
+* `start_time` >= `packet times` < `start_time + window_width
+
+The `end_time` is the time of the last packet in the window
 
 ## Issues
 
@@ -108,6 +110,7 @@ You can find the original research paper on [researchgate](https://www.researchg
 1. Added command line options
 1. Added IPv6 to one of the detectors.  Can't remember which one
 1. Migrated from multi-threaded to multi-processors to make use of multiple cores.  A way to get around the GIL
+1. Added support for count based tumbling window.  Supports either or both time based or count based window boundaries
 
 ## References
 1. Tumbling time windows for network analysis https://www.youtube.com/watch?v=b3MaxbAAdDw
@@ -151,15 +154,16 @@ Install it the way you wish.  These were my notes.
 1. You can see the command line options `python3 main.py --help`
     ```
     $ python3 main.py  --help
-    usage: main.py [-h] [-s SOURCEFILE] [-i INTERFACE] [-l how_long] [-o OUTFILE] [-w WINDOW]
-    Create time window statistics for pcap/pcapng stream or file
+    usage: main.py [-h] [-s SOURCEFILE] [-i INTERFACE] [-l HOWLONG] [-o OUTFILE] [-wt WINDOWTIME] [-wp WINDOWPACKETS] [-t TSHARK]
+    Create time/count window statistics for pcap/pcapng stream or file
     optional arguments:
     -h,            --help                   show this help message and exit
     -s SOURCEFILE, --sourcefile SOURCEFILE  provide a pcap input file name instead of reading live stream
     -i INTERFACE,  --interface INTERFACE    use an interface. [eth0]
-    -l HOWLONG,    --howlong HOWLONG       number of seconds to run live mode. [120]
+    -l HOWLONG,    --howlong HOWLONG        number of seconds to run live mode. [120]
     -o OUTFILE,    --outfile OUTFILE        change the name of the output file [dataset.csv]
-    -w WINDOW,     --window WINDOW          time window in msec [5000]
+    -wt WINDOW,    --windowtime WINDOW      time window in msec [5000]
+    -wp COUNT,     --windowpackets COUNT    max packets in window [None]
     -t TSHARK,     --tshark TSHARK          tshark command [tshark]
     ```
 1. The default behavior is to work off of live tshark output. You can change this by setting the `--sourcefile` on the command line.
@@ -231,7 +235,7 @@ This benchmark was for 2-queue 3-python process version.  It was a test to see h
 1. Analysis times are linear with the number of packets processed
 1. Tested with ransomware samples from unavarra.es some of which may have originated on other sites.
 1. Running the 5 process (4 queue) version on quad core machines results in  **degraded** performance by 10%.  This is because we are CPU bound and have more processes that cores.
-
+1. Crylock and Razi retrieved from http://dataset.tlm.unavarra.es/ransomware/
 
 # Source Code 
 The source tree is formatted with _black_ in _Visual Studio Code_ extension

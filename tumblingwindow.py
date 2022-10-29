@@ -19,17 +19,23 @@ class TumblingWindow:
         self,
         frame_time_epoch,
         window_start_time_previous,
-        window_end_time_previous,
         window_count_previous,
     ):
         self.logger.debug(
-            "evaluating window fit: frame_time_epoch: %d start: %d stop: %d",
+            "evaluating window fit: frame_time_epoch: %d start: %d length: %s",
             frame_time_epoch,
             window_start_time_previous,
-            window_end_time_previous,
             self.window_length_time,
         )
-        return frame_time_epoch >= window_end_time_previous
+        outside_time = window_start_time_previous is None or (
+            self.window_length_time is not None
+            and frame_time_epoch >= window_start_time_previous + self.window_length_time
+        )
+        outside_packets = window_count_previous is None or (
+            self.window_length_count is not None
+            and window_count_previous >= self.window_length_count
+        )
+        return outside_time or outside_packets
 
     # calculate the new time offsets
     # frame_time_epoch - time in message in msec from epoch
@@ -39,38 +45,45 @@ class TumblingWindow:
         self,
         frame_time_epoch,
         window_start_time_previous,
-        window_end_time_previous,
         window_count_previous,
     ):
         self.logger.debug(
-            "old window: frame_time_epoch: %d start: %d stop: %d",
+            "old window: frame_time_epoch: %d start: %d tiem span: %s count: %s count span %s",
             frame_time_epoch,
             window_start_time_previous,
-            window_end_time_previous,
             self.window_length_time,
+            window_count_previous,
+            self.window_length_count,
         )
 
-        if (
-            window_end_time_previous is not None
-            and frame_time_epoch < window_end_time_previous
+        if self.is_outside_current_window(
+            frame_time_epoch=frame_time_epoch,
+            window_start_time_previous=window_count_previous,
+            window_count_previous=window_count_previous,
         ):
-            # return the same time if still in the window
-            window_start_time_new = window_start_time_previous
-            window_end_time_new = window_end_time_previous
-            pass
-        else:
             # move to the next window
-            # first interval starts on the first packet. all others are locked to that
-            if window_end_time_previous is None:
+            if window_start_time_previous is None:
+                # first interval starts on the first packet. all others are locked to that
+                window_start_time_new = frame_time_epoch
+            elif (
+                self.window_length_count is not None
+                and window_count_previous >= self.window_length_count
+            ):
+                # we ended the window because of the max packet count
                 window_start_time_new = frame_time_epoch
             else:
-                window_start_time_new = window_end_time_previous
-            window_end_time_new = window_start_time_new + self.window_length_time
+                # we ended the window because we are outside the time window
+                window_start_time_new = (
+                    window_start_time_previous + self.window_length_time
+                )
             self.logger.debug(
-                "new window: %d startTime: %d, stopTime: %d",
+                "new window: %d startTime: %d",
                 window_start_time_new,
-                window_end_time_new,
             )
+        else:
+            # return the same time if still in the window
+            window_start_time_new = window_start_time_previous
+            pass
 
         # return the calculated window parameters for the passed in time
-        return (window_start_time_new, window_end_time_new)
+        return window_start_time_new

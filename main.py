@@ -41,7 +41,7 @@ def main():
     settings = AppSettings()
 
     parser = argparse.ArgumentParser(
-        description="Create time window statistics for pcap stream or file"
+        description="Create time/count window statistics for pcap stream or file"
     )
     parser.add_argument(
         "-s",
@@ -73,10 +73,18 @@ def main():
         action="store",
     )
     parser.add_argument(
-        "-w",
-        "--window",
+        "-wt",
+        "--windowtime",
         default=settings.time_window,
         help="time window in msec [" + str(settings.time_window) + "]",
+        action="store",
+        type=int,
+    )
+    parser.add_argument(
+        "-wp",
+        "--windowpackets",
+        default=settings.packet_window,
+        help="maximum number of packets [" + str(settings.packet_window) + "]",
         action="store",
         type=int,
     )
@@ -98,8 +106,10 @@ def main():
         settings.how_long = args.howlong
     if args.outfile:
         settings.output_file_name = args.outfile
-    if args.window:
-        settings.time_window = args.window
+    if args.windowtime:
+        settings.time_window = args.windowtime
+    if args.windowpackets:
+        settings.packet_window = args.windowpackets
     if args.tshark:
         settings.tshark_program = args.tshark
 
@@ -129,6 +139,7 @@ def main():
     time_counts = TimesAndCounts(
         "time the packets",
         settings.time_window,
+        settings.packet_window,
         settings.output_file_name,
         queues.timesQ,
     )
