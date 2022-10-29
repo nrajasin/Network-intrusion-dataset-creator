@@ -110,7 +110,9 @@ You can find the original research paper on [researchgate](https://www.researchg
 1. Added command line options
 1. Added IPv6 to one of the detectors.  Can't remember which one
 1. Migrated from multi-threaded to multi-processors to make use of multiple cores.  A way to get around the GIL
-1. Added support for count based tumbling window.  Supports either or both time based or count based window boundaries
+1. Added support for count based tumbling window.  Added support for -wt or -wp.
+    * Supports either or both time based or count based window boundaries.  
+    * The window behavior must be specified as a parameter in order to support one or both window parametrs.
 
 ## References
 1. Tumbling time windows for network analysis https://www.youtube.com/watch?v=b3MaxbAAdDw
@@ -123,10 +125,8 @@ You can find the original research paper on [researchgate](https://www.researchg
 
 ## Prerequisites
 
-1. Running in live capture mode may require *sudo* access.  You will be prompted for a password at execution time
-    * The program is currently hard coded to run as sudo.
-1. You will need Wireshark/Tshark to run this software. Installation would vary depending on your OS.
-    * Ubuntu: `sudo apt install tshark`
+1. Wireshark/Tshark (`tshark`) is installed, reachable and, on the PATH.. Installation would vary depending on your OS.
+    * Ubuntuinstall : `sudo apt install tshark`
 1. This software is written in python3 so you will need to install python3. Most updated linux distributes already have it installed. 
 Install it the way you wish.  These were my notes.
     ```
@@ -141,14 +141,12 @@ Install it the way you wish.  These were my notes.
     ```
     conda update --prefix /home/joe/anaconda3 anaconda
     ```
-    
-1. The requirements.txt file has been deleted because the current code base does not seem to require any additional libraries. Create a new one if you find you need it and submit a pull request.
-    1. If running pypy then 
-        1. ` pypy3 -mpip install pyyaml`
-1. `tshark` is installed, reachable and, on the PATH.  This python program for tshar with somehting like:
+1. Running in live capture mode may require *sudo* access to access the network in promiscuous mode.  You will be prompted for a password at execution time
     ```
     cmd = "sudo tshark -r /path/filename -V -T json"
     ```
+1. The requirements.txt file has been deleted because the current code base does not seem to require any additional libraries. Create a new one if you find you need it and submit a pull request.
+    1. pypy is slower than cpython as of 2022/10.  If running pypy then you need to instal pyyaml: ` pypy3 -mpip install pyyaml`
 
 ## Command line execution
 1. You can see the command line options `python3 main.py --help`
@@ -166,12 +164,14 @@ Install it the way you wish.  These were my notes.
     -wp COUNT,     --windowpackets COUNT    max packets in window [None]
     -t TSHARK,     --tshark TSHARK          tshark command [tshark]
     ```
+1. The system needs to know the windowing parameters. Tumbling Window behavior is specified with either _window time_ or the _window packet_. One **must be specified**.
 1. The default behavior is to work off of live tshark output. You can change this by setting the `--sourcefile` on the command line.
     1. In this mode you will be running wireshark and capturing packets. These will be used to make your own dataset depending on the options you pick. 
-1. The results are stored in a CSV file.  You can override with the `--outfile` command line option
-1. You can set a time to capture the packet_dict with the `--howlong <time>` option. The default is stored in `set.py:how_long`. The time is seconds. 
-1. In this mode you can load an existing .pcap/.pcapng capture file and make a dataset in csv format. Specify the path to the input pcap/pcapng capture file with `--sourcefile <path>` The default is stored in `input_file_path` in `set.py`
-1. The software allows users to define a time window for each aggregation record. Specify the time in _msec_ with the `--window <size>` offering.. TThe default is stored in  `set.py` . The time is in milliseconds. 
+1. The results are stored in a CSV file `dataset.csv`.  You can override with the `--outfile` command line option
+1. You can set the capture time on a live network adapters with `--howlong <time>` option. The default is stored in `set.py:how_long`. The time is seconds. 
+1. You can analyze an existing .pcap/.pcapng capture file and make a dataset in csv format. Specify the path to the input pcap/pcapng capture file with `--sourcefile <path>` The default is stored in `input_file_path` in `set.py`
+1. You can define a time window for each aggregation record. Specify the time in _msec_ with the `--wt <size>` command line option. TThe default is stored in `settings.py` . The time is in milliseconds. 
+1. You can define a packet window, the max number of packets, for each aggregation record.  Use the `-wp <count>` command line option.
 
 ## Usage Notes:
 *Linux users can set the execute bit on main.py and run the main.py directly without the `python3` part.
@@ -180,17 +180,13 @@ chmod +x main.py
 ```
 
 ## Sample: Read from pcap file
-Reads from a Razi pcap file and writes to dataset.csv
-```
-python3 main.py --sourcefile Razi_15012021.pcap
-```
+| Description | Command |
+|-|-|
+| Use 5000 msec window reading from Razi...pcap file and write output to dataset.csv | `python3 main.py --sourcefile Razi_15012021.pcap -wt 5000` |
+| Use 5000 msec window reading from smtp-ssl.pcapng file from https://wiki.wireshark.org/SampleCaptures and write output to dataset.csv | `python3 main.py --sourcefile smtp-ssl.pcapng -wt 5000` |
+| Use 100 packet window reading from smtp-ssl.pcapng file from https://wiki.wireshark.org/SampleCaptures and write output to dataset.csv | `python3 main.py --sourcefile smtp-ssl.pcapng -wp 100` |
 
-Reads from the smtp-ssl.pcapng file from https://wiki.wireshark.org/SampleCaptures
-```
-python3 main.py --sourcefile smtp-ssl.pcapng
-```
-
-## Capturing pcap files with tshark
+## Capture internet traffice from `eth0` and writes the output to pcap files with tshark
 Try this
 ```
 sudo tshark  -i eth0 -a duration:120 -w /tmp/foo.pcap -F pcap
@@ -237,6 +233,70 @@ This benchmark was for 2-queue 3-python process version.  It was a test to see h
 1. Running the 5 process (4 queue) version on quad core machines results in  **degraded** performance by 10%.  This is because we are CPU bound and have more processes that cores.
 1. Crylock and Razi retrieved from http://dataset.tlm.unavarra.es/ransomware/
 
-# Source Code 
+# Windowing behavior
+These examples all use the same sample data set available on the wireshark site
+
+## 5 second (5000msec) time window
+Purely time based window
+```
+~/Network-intrusion-dataset-creator$ python3 main.py --sourcefile smtp-ssl.pcapng -wt 5000
+1 packetCount: 21 startTime: 11:31:42.005000 endTime: 11:31:42.450000
+2 packetCount: 0 startTime: 11:31:47.005000 endTime: 11:31:47.005000
+3 packetCount: 0 startTime: 11:31:52.005000 endTime: 11:31:52.005000
+4 packetCount: 4 startTime: 11:31:57.005000 endTime: 11:31:58.335000
+5 packetCount: 0 startTime: 11:32:02.005000 endTime: 11:32:02.005000
+6 packetCount: 0 startTime: 11:32:07.005000 endTime: 11:32:07.005000
+7 packetCount: 0 startTime: 11:32:12.005000 endTime: 11:32:12.005000
+8 packetCount: 0 startTime: 11:32:17.005000 endTime: 11:32:17.005000
+9 packetCount: 0 startTime: 11:32:22.005000 endTime: 11:32:22.005000
+10 packetCount: 4 startTime: 11:32:27.005000 endTime: 11:32:29.517000
+11 packetCount: 0 startTime: 11:32:32.005000 endTime: 11:32:32.005000
+12 packetCount: 9 startTime: 11:32:37.005000 endTime: 11:32:41.025000 
+```
+
+## 10 second time window
+Purely time based window. The larger (>5000msec) means fewer windows.
+```
+~/Network-intrusion-dataset-creator$ python3 main.py --sourcefile smtp-ssl.pcapng -wt 10000
+1 packetCount: 21 startTime: 11:31:42.005000 endTime: 11:31:42.450000
+2 packetCount: 4 startTime: 11:31:52.005000 endTime: 11:31:58.335000
+3 packetCount: 0 startTime: 11:32:02.005000 endTime: 11:32:02.005000
+4 packetCount: 0 startTime: 11:32:12.005000 endTime: 11:32:12.005000
+5 packetCount: 4 startTime: 11:32:22.005000 endTime: 11:32:29.517000
+6 packetCount: 9 startTime: 11:32:32.005000 endTime: 11:32:41.025000
+```
+
+
+### 4 packet maximum or 10 seconds (10000msec)
+Maximum of 4 packets or 10 seconds whichever is first. The small packet max means more windows. There is one window in the middle that timed out before filling.
+```
+~/Network-intrusion-dataset-creator$ python3 main.py --sourcefile smtp-ssl.pcapng -wp 4 -wt 10000
+1 packetCount: 4 startTime: 11:31:42.005000 endTime: 11:31:42.089000
+2 packetCount: 4 startTime: 11:31:42.089000 endTime: 11:31:42.132000
+3 packetCount: 4 startTime: 11:31:42.132000 endTime: 11:31:42.212000
+4 packetCount: 4 startTime: 11:31:42.212000 endTime: 11:31:42.309000
+5 packetCount: 4 startTime: 11:31:42.309000 endTime: 11:31:42.450000
+6 packetCount: 1 startTime: 11:31:42.450000 endTime: 11:31:42.450000
+7 packetCount: 4 startTime: 11:31:52.450000 endTime: 11:31:58.335000
+8 packetCount: 4 startTime: 11:32:29.474000 endTime: 11:32:29.517000
+9 packetCount: 4 startTime: 11:32:40.938000 endTime: 11:32:41.025000
+10 packetCount: 4 startTime: 11:32:41.025000 endTime: 11:32:41.025000
+11 packetCount: 1 startTime: 11:32:41.025000 endTime: 11:32:41.025000
+```
+
+### 20 packet maximum or 10 seconds (10000msec)
+Maximum of 20 packets or 10 seconds whichever is first. The large packet window size with the small data set results in several empty windows in the middle.
+```
+~/Network-intrusion-dataset-creator$ python3 main.py --sourcefile smtp-ssl.pcapng -wp 20 -wt 10000
+1 packetCount: 20 startTime: 11:31:42.005000 endTime: 11:31:42.450000
+2 packetCount: 1 startTime: 11:31:42.450000 endTime: 11:31:42.450000
+3 packetCount: 4 startTime: 11:31:52.450000 endTime: 11:31:58.335000
+4 packetCount: 0 startTime: 11:32:02.450000 endTime: 11:32:02.450000
+5 packetCount: 0 startTime: 11:32:12.450000 endTime: 11:32:12.450000
+6 packetCount: 4 startTime: 11:32:22.450000 endTime: 11:32:29.517000
+7 packetCount: 9 startTime: 11:32:32.450000 endTime: 11:32:41.025000
+```
+
+# Source Code standards
 The source tree is formatted with _black_ in _Visual Studio Code_ extension
 

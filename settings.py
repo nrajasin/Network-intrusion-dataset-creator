@@ -23,8 +23,8 @@
 
 class AppSettings:
 
-    # sliding window size
-    time_window = 5000  # msec
+    # sliding window size in msec
+    time_window = None
 
     # sliding window size in packet
     packet_window = None

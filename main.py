@@ -30,6 +30,7 @@ import argparse
 import queues
 
 import logging
+import sys
 from loggingconfig import load_logging
 
 
@@ -41,7 +42,7 @@ def main():
     settings = AppSettings()
 
     parser = argparse.ArgumentParser(
-        description="Create time/count window statistics for pcap stream or file"
+        description="Create time/count window statistics for tshark pcap stream or file"
     )
     parser.add_argument(
         "-s",
@@ -76,7 +77,7 @@ def main():
         "-wt",
         "--windowtime",
         default=settings.time_window,
-        help="time window in msec [" + str(settings.time_window) + "]",
+        help="size of time window in msec [" + str(settings.time_window) + "]",
         action="store",
         type=int,
     )
@@ -84,7 +85,9 @@ def main():
         "-wp",
         "--windowpackets",
         default=settings.packet_window,
-        help="maximum number of packets [" + str(settings.packet_window) + "]",
+        help="maximum number of packets in a window ["
+        + str(settings.packet_window)
+        + "]",
         action="store",
         type=int,
     )
@@ -112,6 +115,12 @@ def main():
         settings.packet_window = args.windowpackets
     if args.tshark:
         settings.tshark_program = args.tshark
+
+    if settings.time_window is None and settings.packet_window is None:
+        logger.error(
+            "Must specifiy either the time window or the packet count window see --help"
+        )
+        sys.exit(2)
 
     data_collect = PacketCapture(
         "packet capture packet_dict",
