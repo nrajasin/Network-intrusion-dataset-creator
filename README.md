@@ -105,7 +105,7 @@ You can find the original research paper on [researchgate](https://www.researchg
 1. Added IGMP counts
 1. Added num_smb, num_smb2, num_pnrp, num_wsdd, num_ssdp
 1. Added column that shows when that row ends
-1. Eliminated global variables
+1. Eliminated global variables other than the shared memory queues.  This probably means this only works with `fork`
 1. Unified pcap and live tshark into single set of classes
 1. Added command line options
 1. Added IPv6 to one of the detectors.  Can't remember which one

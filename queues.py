@@ -1,8 +1,8 @@
 import multiprocessing as mp
 
+# These are in globaly shared memory that probably only works with fork
 
 # Should probably be called somehting like packetQ
-
 # capture --> detectors/services
 global sharedQ
 sharedQ = mp.Queue()
