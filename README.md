@@ -46,6 +46,7 @@ The `end_time` is the time of the last packet in the window
 1. Runs as a multi-processing application because Python does not support parallel concurrent threads
     * Was: This application has multiple concurrent threads but does not execute as parallel operations due to limitations in Python and the GIL.
 1. NBNS , SMB and SMB2 service counts have not ben vetted. They may be correct or overcount. 
+1. Does not work with multiprocessing type `spawn`.  Only works with `fork` which means runs on linux but not Mac with Python 3.8 or later
 
 ## Sample CSV output
 
