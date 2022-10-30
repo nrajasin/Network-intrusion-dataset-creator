@@ -21,11 +21,9 @@
 # SOFTWARE.
 
 import re
-import multiprocessing
 import subprocess
 import json
 import time
-import multiprocessing
 import logging
 
 
@@ -33,11 +31,10 @@ import logging
 # args input-file-name, ethernet-interface, how-long
 
 
-class PacketCapture(multiprocessing.Process):
+class PacketCapture:
     def __init__(
         self, name, tshark_program, input_file_name, interface, how_long, outQ
     ):
-        multiprocessing.Process.__init__(self)
         self.name = name
         self.logger = logging.getLogger(__name__)
 
@@ -101,7 +98,7 @@ class PacketCapture(multiprocessing.Process):
                 break
         end_timer = time.perf_counter()
         calc_rate = num_read / (end_timer - start_timer)
-        self.logger.info("processed: %d rate: %f ", num_read, calc_rate)
+        self.logger.info("Ingested: %d rate: %f ", num_read, calc_rate)
         p.stdout.close()
         p.wait()
         self.logger.info("Exiting thread")

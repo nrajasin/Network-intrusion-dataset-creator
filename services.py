@@ -20,16 +20,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import multiprocessing
 import transitkeys
 import logging
 
 # check the traffic for different services in the traffic suhc as tls,http,smtp
 
 
-class ServiceIdentity(multiprocessing.Process):
+class ServiceIdentity:
     def __init__(self, name, inQ, outQ):
-        multiprocessing.Process.__init__(self)
         self.name = name
         self.logger = logging.getLogger(__name__)
         self.inQ = inQ

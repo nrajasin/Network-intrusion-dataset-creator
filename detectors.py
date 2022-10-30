@@ -24,7 +24,6 @@
 
 import transitkeys
 import ipaddress
-import multiprocessing
 import time
 from dvar import datasetSummary
 from pairstats import pair_stats_tcp
@@ -35,9 +34,8 @@ import logging
 # separate out tcp,udp and arp traffic
 
 
-class PacketAnalyse(multiprocessing.Process):
+class PacketAnalyse:
     def __init__(self, name, inQ, outQ):
-        multiprocessing.Process.__init__(self)
         self.logger = logging.getLogger(__name__)
         self.name = name
         self.inQ = inQ

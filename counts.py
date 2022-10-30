@@ -21,8 +21,6 @@
 # SOFTWARE.
 
 
-import multiprocessing
-import math
 import csv
 from datetime import datetime
 from datetime import time
@@ -36,7 +34,7 @@ import logging
 # Divide the packet_dict into time windows so that you can get average information for a given time
 
 
-class TimesAndCounts(multiprocessing.Process):
+class TimesAndCounts:
 
     fieldnames = [
         "tcp_frame_length",
@@ -73,7 +71,6 @@ class TimesAndCounts(multiprocessing.Process):
     def __init__(
         self, name, window_length_time, window_length_count, csv_file_path, inQ
     ):
-        multiprocessing.Process.__init__(self)
         self.name = name
         self.logger = logging.getLogger(__name__)
         self.window_length_time = window_length_time

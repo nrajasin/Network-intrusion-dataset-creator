@@ -28,7 +28,7 @@ from counts import *
 from capture import *
 import argparse
 import queues
-
+import multiprocessing as mp
 import logging
 import sys
 from loggingconfig import load_logging
@@ -37,10 +37,11 @@ from loggingconfig import load_logging
 def main():
     load_logging()
     logger = logging.getLogger(__name__)
+    # as of 2022/10 this only works with fork mode with in memory queues
     logger.info(
         "multiprocessing start method: %s out of %s",
-        multiprocessing.get_start_method(),
-        multiprocessing.get_all_start_methods(),
+        mp.get_start_method(),
+        mp.get_all_start_methods(),
     )
 
     # load the settings
@@ -135,7 +136,8 @@ def main():
         settings.how_long,
         queues.sharedQ,
     )
-    data_c_p = data_collect.start()
+    data_c_p = mp.Process(target=data_collect.run)
+    data_c_p.start()
     # if not data_c_p:
     #     self.logger.info("tshark may not be installed try 'sudo apt install tshark'")
     #     return
@@ -143,12 +145,14 @@ def main():
     data_process = PacketAnalyse(
         "packet analyzing thread", queues.sharedQ, queues.serviceQ
     )
-    data_p_p = data_process.start()
+    data_p_p = mp.Process(target=data_process.run)
+    data_p_p.start()
 
     services_process = ServiceIdentity(
         "service detecter", queues.serviceQ, queues.timesQ
     )
-    services_p_p = services_process.start()
+    services_p_p = mp.Process(target=services_process.run)
+    services_p_p.start()
 
     time_counts = TimesAndCounts(
         "time the packets",
@@ -157,17 +161,15 @@ def main():
         settings.output_file_name,
         queues.timesQ,
     )
-    time_c_p = time_counts.start()
+    time_c_p = mp.Process(target=time_counts.run)
+    time_c_p.start()
 
-    # try:
-    #     time_c_p.wait
-    # except KeyboardInterrupt:
-    #     # This does not reliably clean up :-(
-    #     # Without cleanup have to do this on dev box pkill -f tshark and pkill -f python3
-    #     data_c_p.terminate()
-    #     data_p_p.terminate()
-    #     services_p_p.terminate()
-    #     time_c_p.terminate()
+    data_c_p.join()
+    data_p_p.join()
+    services_p_p.join()
+    time_c_p.join()
+
+    logger.info("Party like its 1999")
 
 
 if __name__ == "__main__":
