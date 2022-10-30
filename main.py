@@ -37,6 +37,11 @@ from loggingconfig import load_logging
 def main():
     load_logging()
     logger = logging.getLogger(__name__)
+    logger.info(
+        "multiprocessing start method: %s out of %s",
+        multiprocessing.get_start_method(),
+        multiprocessing.get_all_start_methods(),
+    )
 
     # load the settings
     settings = AppSettings()
