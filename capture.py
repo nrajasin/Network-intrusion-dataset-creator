@@ -85,8 +85,17 @@ class PacketCapture:
                 keyval = source_filter.items()
                 self.logger.debug("Working with dict %s", keyval)
                 a = self.unwrap(keyval)
-                self.logger.debug("Working with packet %s", a)
-                self.send_data(a)
+                # I've seen some data sets with dates from the future on the Mac M1
+                # Can't cache the time because could be reading from a network channel
+                now = time.time()
+                packet_time = float(a["frame.time_epoch"])
+                self.logger.debug(
+                    "Working at time %f on packet at time %f", now, packet_time
+                )
+                if now >= packet_time:
+                    self.send_data(a)
+                else:
+                    self.logger.warn("Dropping future packet %s", a["frame.time"])
             else:
                 # we get blank lines
                 self.logger.debug("Ignoring: %s", line)

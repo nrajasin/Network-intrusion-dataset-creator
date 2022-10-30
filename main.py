@@ -173,4 +173,6 @@ def main():
 
 
 if __name__ == "__main__":
+    # Required for Mac Python 3.8+
+    mp.set_start_method("fork", force=True)
     main()

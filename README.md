@@ -46,7 +46,7 @@ The `end_time` is the time of the last packet in the window
 1. Runs as a multi-processing application because Python does not support parallel concurrent threads
     * Was: This application has multiple concurrent threads but does not execute as parallel operations due to limitations in Python and the GIL.
 1. NBNS , SMB and SMB2 service counts have not ben vetted. They may be correct or overcount. 
-1. Does not work with multiprocessing type `spawn`.  Only works with `fork` which means runs on linux but not Mac with Python 3.8 or later
+1. Does not work with multiprocessing type `spawn`.  Only works with `fork`. Code adjusted to force `fork`in order to run on Mac with Python 3.8 or later.  `Spawn` is Mac default for 3.8+
 
 ## Sample CSV output
 
@@ -111,9 +111,11 @@ You can find the original research paper on [researchgate](https://www.researchg
 1. Added command line options
 1. Added IPv6 to one of the detectors.  Can't remember which one
 1. Migrated from multi-threaded to multi-processors to make use of multiple cores.  A way to get around the GIL
-1. Added support for count based tumbling window.  Added support for -wt or -wp.
+1. Added support for count based tumbling window. Now supports both time and count. 
+    * Added command line option support for -wt or -wp.
     * Supports either or both time based or count based window boundaries.  
     * The window behavior must be specified as a parameter in order to support one or both window parametrs.
+1. Force multiprocessing to run in `fork` mode.  Linux does this natively.  Mac Python 3.8 and later use `Spawn`
 
 ## References
 1. Tumbling time windows for network analysis https://www.youtube.com/watch?v=b3MaxbAAdDw
@@ -217,11 +219,12 @@ These tests were run on two different machines
 | Crylock |   143,446,091 B  | real 1:47 user 7:14  sys 2:36  | 128778 @ 1259/sec  | 122 | 10:04 | cpython       | 16C Xeon E5 2640 V2 2.2Ghz SATA/SSD |
 | Crylock |   143,446,091 B  | real 1:15 user 5:17  sys 2:07  | 128778 @ 1578/sec  | 122 | 10:04 | cpython       | 20C Xeon E5 2680 V2 2.8Ghz SATA/SSD |
 | Crylock |   143,446,091 B  | real 3:07 user 11:39 sys 1:21  | 128778 @ 754/sec   | 122 | 10:04 | pypy 3.6      | 16C Xeon E5 2640 V2 2.2Ghz SATA/SSD |
-| Crylock |   143,446,091 B  | real 2:18 user 08:29 sys 0:50  | 128778 @ 1035/sec  | 122 | 10:04 | pypy 3.7      | 20C Xeon E5 2580 V2 2.8 Ghz SATA/SSD |
+| Crylock |   143,446,091 B  | real 2:18 user 08:29 sys 0:50  | 128778 @ 1035/sec  | 122 | 10:04 | pypy 3.7      | 20C Xeon E5 2680 V2 2.8Ghz SATA/SSD |
 | Crylock |   143,446,091 B  | real 0:21 user 1:38  sys 0:27  | 128778 @ 6150/sec  | 122 | 10:14 | cypthon       |  8C Ryzen 5800X NVME    |
 | Razi    |   767,491,552 B  |                                | 573523 @ 1106/sec  | 112 | 09:21 | cpython       | 16C Xeon E5 2640 V2 2.2Ghz SATA/SSD |
 | Razi    |   767,491,552 B  | real 6:07 user 25:31 sys 11:17 | 573523 @ 1562/sec  | 112 | 09:21 | cpython       | 20C Xeon E5 2680 V2 2.8Ghz SATA/SSD |
-| Razi    |   767,491,552 B  | real:1:37 user 7:28 sys:2:17   | 573523 @ 5874/sec  | 112 | 09:21 | cypthon       |  8C Ryzen 5800X NVME    |
+| Razi    |   767,491,552 B  | real 1:37 user 7:28 sys 2:17   | 573523 @ 5874/sec  | 112 | 09:21 | cypthon       |  8C Ryzen 5800X NVME    |
+| Razi    |   767,491,522 B  | total 2:49 user 10:30 sys 1:40 | 573523 @ 3418/sec  | 112 | 09:21 | cpython       |  8C Macbook M1          |
 
 This benchmark was for 2-queue 3-python process version.  It was a test to see how much impact the queues vs the uplift of having extra processors.  For this test we removed the queue between detectors and services.
 
@@ -234,6 +237,7 @@ This benchmark was for 2-queue 3-python process version.  It was a test to see h
 1. Tested with ransomware samples from unavarra.es some of which may have originated on other sites.
 1. Running the 5 process (4 queue) version on quad core machines results in  **degraded** performance by 10%.  This is because we are CPU bound and have more processes that cores.
 1. Crylock and Razi retrieved from http://dataset.tlm.unavarra.es/ransomware/
+1. The Macbook M1 was limited by `tshark` performance as observed using `top`.  The `tshark` process was at 100% while all the others were at 50%
 
 # Windowing behavior
 These examples all use the same sample data set available on the wireshark site
