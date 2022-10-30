@@ -21,7 +21,6 @@
 # SOFTWARE.
 
 import multiprocessing
-import queues
 import transitkeys
 import logging
 

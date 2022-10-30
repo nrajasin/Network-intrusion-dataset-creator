@@ -22,7 +22,6 @@
 
 
 import multiprocessing
-import queues
 import math
 import csv
 from datetime import datetime
