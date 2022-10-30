@@ -48,7 +48,7 @@ class TumblingWindow:
         window_count_previous,
     ):
         self.logger.debug(
-            "old window: frame_time_epoch: %d start: %d tiem span: %s count: %s count span %s",
+            "old window: frame_time_epoch: %d window start: %d time-span: %s window count: %s count-span %s",
             frame_time_epoch,
             window_start_time_previous,
             self.window_length_time,
@@ -85,5 +85,11 @@ class TumblingWindow:
             window_start_time_new = window_start_time_previous
             pass
 
+        self.logger.debug(
+            "new window: frame_time_epoch: %d prev start: %d new start %d ",
+            frame_time_epoch,
+            window_start_time_previous,
+            window_start_time_new,
+        )
         # return the calculated window parameters for the passed in time
         return window_start_time_new
