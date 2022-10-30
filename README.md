@@ -146,6 +146,7 @@ Install it the way you wish.  These were my notes.
     cmd = "sudo tshark -r /path/filename -V -T json"
     ```
 1. The requirements.txt file has been deleted because the current code base does not seem to require any additional libraries. Create a new one if you find you need it and submit a pull request.
+    1. Mac Python 3, cpython, requires a yaml install.  `pip3 instal pyyaml`
     1. pypy is slower than cpython as of 2022/10.  If running pypy then you need to instal pyyaml: ` pypy3 -mpip install pyyaml`
 
 ## Command line execution
