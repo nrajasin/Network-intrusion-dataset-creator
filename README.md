@@ -118,6 +118,8 @@ You can find the original research paper on [researchgate](https://www.researchg
 1. Force multiprocessing to run in `fork` mode.  Linux does this natively.  Mac Python 3.8 and later use `Spawn`
 
 ## References
+1. Time and Count based Tumbling Windows for Network Packet Statistics https://youtu.be/6xa0fqRYpZM
+    * https://joe.blog.freemansoft.com/2022/10/time-and-count-based-tumbling-windows.html
 1. Tumbling time windows for network analysis https://www.youtube.com/watch?v=b3MaxbAAdDw
     * http://joe.blog.freemansoft.com/2021/04/network-intrusion-features-via-sliding.html
 1. Using Python to implement tumbling time windows for network analysis https://www.youtube.com/watch?v=jKgGh5a5gFA
