@@ -133,7 +133,7 @@ class TimesAndCounts:
                         )
 
                     # flush and create windows until we are in the one for this packet
-                    while self.tumbling_window.is_outside_current_window(
+                    while self.tumbling_window.is_past_current_window(
                         frame_time_epoch=frame_time_epoch,
                         window_start_time_previous=current_window.window_start_time,
                         window_count_previous=current_window.num_packets,

@@ -116,6 +116,7 @@ You can find the original research paper on [researchgate](https://www.researchg
     * Supports either or both time based or count based window boundaries.  
     * The window behavior must be specified as a parameter in order to support one or both window parametrs.
 1. Force multiprocessing to run in `fork` mode.  Linux does this natively.  Mac Python 3.8 and later use `Spawn`
+1. Added unit tests
 
 ## References
 1. Time and Count based Tumbling Windows for Network Packet Statistics https://youtu.be/6xa0fqRYpZM
@@ -153,6 +154,29 @@ Install it the way you wish.  These were my notes.
 1. The requirements.txt file has been deleted because the current code base does not seem to require any additional libraries. Create a new one if you find you need it and submit a pull request.
     1. Mac Python 3, cpython, requires a yaml install.  `pip3 instal pyyaml`
     1. pypy is slower than cpython as of 2022/10.  If running pypy then you need to instal pyyaml: ` pypy3 -mpip install pyyaml`
+
+## Unit tests
+
+This project now has minimal unit tests to verify tumbling window behavor. The unit tests are require `pytest`
+You must install the testing dependencies if you wish to run the tests.  
+
+### Installing testing dependencies
+`python3 -m pip install pytest`
+
+### Running Unit Tests
+`pytest`
+
+Should see a variant of 
+```
+============================================================================= test session starts ==============================================================================
+platform linux -- Python 3.8.10, pytest-7.2.0, pluggy-1.0.0
+rootdir: /home/joe/Network-intrusion-dataset-creator
+collected 7 items                                                                                                                                                              
+
+tests/tumblingwindow_test.py .....                                                                                                                                       [100%]
+
+============================================================================== 5 passed in 0.01s ===============================================================================
+```
 
 ## Command line execution
 1. You can see the command line options `python3 main.py --help`
