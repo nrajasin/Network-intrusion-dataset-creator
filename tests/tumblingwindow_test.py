@@ -42,7 +42,7 @@ def test_another_packet_ok():
 
 def test_one_packet_too_many():
     assert (
-        tw.is_past_current_window(window_start_time_minus_min_1, window_start_time, 10)
+        tw.is_past_current_window(window_start_time_minus_sec_1, window_start_time, 10)
     ) == True
 
 
