@@ -117,6 +117,7 @@ You can find the original research paper on [researchgate](https://www.researchg
     * The window behavior must be specified as a parameter in order to support one or both window parametrs.
 1. Force multiprocessing to run in `fork` mode.  Linux does this natively.  Mac Python 3.8 and later use `Spawn`
 1. Added unit tests
+1. Minimal requirements.txt added back
 
 ## References
 1. Time and Count based Tumbling Windows for Network Packet Statistics https://youtu.be/6xa0fqRYpZM
@@ -131,9 +132,12 @@ You can find the original research paper on [researchgate](https://www.researchg
 
 ## Prerequisites
 
-1. Wireshark/Tshark (`tshark`) is installed, reachable and, on the PATH.. Installation would vary depending on your OS.
-    * Ubuntuinstall : `sudo apt install tshark`
-1. This software is written in python3 so you will need to install python3. Most updated linux distributes already have it installed. 
+* Wireshark/Tshark (`tshark`) is installed, reachable and, on the PATH.. Installation would vary depending on your OS.
+    Ubuntu install : 
+    ```
+    sudo apt install tshark
+    ```
+* This software is written in python3 so you will need to install python3. Most updated linux distributes already have it installed. 
 Install it the way you wish.  These were my notes.
     ```
     sudo apt-get update
@@ -147,13 +151,27 @@ Install it the way you wish.  These were my notes.
     ```
     conda update --prefix /home/joe/anaconda3 anaconda
     ```
-1. Running in live capture mode may require *sudo* access to access the network in promiscuous mode.  You will be prompted for a password at execution time
+* The `requirements.txt` file has been re-added to the project without version numbers.
+    ```
+    pip3 install -r requirements.txt
+    ```
+* You can manually install the dependencies
+    ```
+    pip3 install pyyaml
+    pip3 install pytest
+    ```
+* Running in live capture mode may require *sudo* access to access the network in promiscuous mode.  You will be prompted for a password at execution time
     ```
     cmd = "sudo tshark -r /path/filename -V -T json"
     ```
-1. The requirements.txt file has been deleted because the current code base does not seem to require any additional libraries. Create a new one if you find you need it and submit a pull request.
-    1. Mac Python 3, cpython, requires a yaml install.  `pip3 instal pyyaml`
-    1. pypy is slower than cpython as of 2022/10.  If running pypy then you need to instal pyyaml: ` pypy3 -mpip install pyyaml`
+* Mac Python 3, cpython, requires a yaml install.  
+    ```
+    pip3 install pyyaml
+    ```
+* pypy is slower than cpython as of 2022/10.  If running pypy then you need to instal pyyaml: 
+    ```
+    pypy3 -mpip install pyyaml
+    ```
 
 ## Unit tests
 
