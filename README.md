@@ -32,11 +32,14 @@ This runs as a multi-processing application with 4 python processes plus tshark
 1. `TimesAndCounts` manages the time windows and calculates the time bucket/window statistics and writes them to output.  it reads from the inbound topic and aggregates statistics across a set of incoming packets.  The statistics are retained for a single time window and are written to csv file, one record for each time window.
 
 ### Tumbling Windows
-The program creates a series of adjacent, non-overlapping, windows. Each packet is included in _just one_ window.
-Each window starts at the `start_time` until but not including the `start_time + window_width`
-* `start_time` >= `packet times` < `start_time + window_width
+The program creates a series of adjacent, non-overlapping, _Tumbling_ Windows. Windows are defined by their maximum time span or their maximum event count.  Each packet is included in _just one_ window.
 
-The `end_time` is the time of the last packet in the window
+Each window starts at the `start_time` and spans for some period of time or for some number of packets.  This means windows are bound by time or bound by event counts.  
+
+Time bound windows run from `start_time` until but not including the `start_time + window_width`.  The `end_time` is the time of the last packet in the window
+* `start_time` <= `packet time` < `start_time + window_width`
+
+![Tumbling window](https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgZZfF_EAI7k1CRD1ethab78qjceoTJGCaEb7mIC9BJfmuXtIjo52ERRy6SzMUgLumzNbQ4UrAzUVyzrmbpygvv7j8nrNxKRJ-plj_UAZoddAmS6QHSmIIegjTKLCn3nfn8ErVpUDg_b4UBX4wVodYJTtpdyOSH8t-Y0otY48s5j87cPQFD2Lzny7daOA/s16000/Time%20and%20Packet%20Tumbling%20Windows.png)
 
 ## Issues
 
