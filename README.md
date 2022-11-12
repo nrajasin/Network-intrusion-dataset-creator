@@ -45,7 +45,8 @@ Time bound windows run from `start_time` until but not including the `start_time
 
 1. A packet can be flagged as more than one services.  Services like SSDP are implemented using HTTP. That service is currently counted as both. This means you can see a HTTP with no TCP
 1. IPV6 traffic does not have a `ip.len` field.  This means that the `tcp_ip_length` value in the result set only includes ipv4 traffic.
-    * This is true for TCP and UDP
+1. Only a subset of IP protocols are picked up by the detectors http://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml and passed on to the counts module: `TCP, UDP, IGMP`. Packets for others are dropped.
+1. Only a subset of non IP protocols are picked up and passed on to the counts module: `ARP`. Packets for others are dropped.
 1. Runs as a multi-processing application because Python does not support parallel concurrent threads
     * Was: This application has multiple concurrent threads but does not execute as parallel operations due to limitations in Python and the GIL.
 1. NBNS , SMB and SMB2 service counts have not ben vetted. They may be correct or overcount. 
@@ -177,6 +178,9 @@ Install it the way you wish.  These were my notes.
     pypy3 -mpip install pyyaml
     ```
 
+## Sample pcap
+Sample pcap files for testing can be found at https://wiki.wireshark.org/SampleCaptures
+
 ## Unit tests
 
 This project now has minimal unit tests to verify tumbling window behavor. The unit tests are require `pytest`
@@ -232,6 +236,7 @@ chmod +x main.py
 ```
 
 ## Sample: Read from pcap file
+
 | Description | Command |
 |-|-|
 | Use 5000 msec window reading from Razi...pcap file and write output to dataset.csv | `python3 main.py --sourcefile Razi_15012021.pcap -wt 5000` |

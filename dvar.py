@@ -33,8 +33,12 @@ class datasetSummary:
     arp_count = 0
     # set in detectors
     igmp_count = 0
+
+    # set in detectors
+    not_analyzed_ip = set()
     # set in detectors
     not_analyzed_ip_count = 0
+
     # set in detectors
     not_analyzed_not_ip_count = 0
 
@@ -44,3 +48,16 @@ class datasetSummary:
     udp = {}
     # set in detectors
     arp = {}
+
+    # Is this required if want a vars(dvar) call to return zeros
+    def __init__(self):
+        self.tcp_count = 0
+        self.udp_count = 0
+        self.arp_count = 0
+        self.igmp_count = 0
+        self.not_analyzed_ip_count = 0
+        self.not_analyzed_ip = set()
+        self.not_analyzed_not_ip_count = 0
+        self.tcp = {}
+        self.udp = {}
+        self.arp = {}

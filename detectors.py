@@ -40,9 +40,9 @@ class PacketAnalyse:
         self.name = name
         self.inQ = inQ
         self.outQ = outQ
-        self.dvar = datasetSummary()
 
     def run(self):
+        dvar = datasetSummary()
         start_timer = time.perf_counter()
         self.logger.info("Starting")
         while True:
@@ -52,39 +52,22 @@ class PacketAnalyse:
                     self.logger.debug("We're done - empty dictionary received on queue")
                     self.outQ.put([])
                     break
-                if not self.find_tcp(thePacket, self.dvar):
-                    if not self.find_udp(thePacket, self.dvar):
-                        if not self.find_arp(thePacket, self.dvar):
-                            if not self.find_igmp(thePacket, self.dvar):
-                                if "ip.proto" in thePacket:                                    
-                                    self.dvar.not_analyzed_ip_count += 1
-                                    # ip.proto does not always exist if not ip
-                                    self.logger.debug("Packet was not TCP, UDP, ARP, IGMP ")
-                                    packet_ip_proto = thePacket["ip.proto"]
-                                    # should this be debug() or warn() You could have a lot of these
-                                    self.logger.debug(
-                                        "No protocol filter for: %s", packet_ip_proto
-                                    )
-                                else:
-                                    self.dvar.not_analyzed_not_ip_count += 1
-                                    # Could look for things like ipx for non IP
-                                    self.logger.debug("Packet was not IP ")
-                                    # should this be debug() or warn() You could have a lot of these
-                                    self.logger.debug("failed to identify %s", thePacket)
+                if not self.find_ip(thePacket, dvar):
+                    self.find_non_ip(thePacket, dvar)
         end_timer = time.perf_counter()
         recognized_count = (
-            self.dvar.tcp_count
-            + self.dvar.udp_count
-            + self.dvar.arp_count
-            + self.dvar.igmp_count
-            + self.dvar.not_analyzed_ip_count
+            dvar.tcp_count + dvar.udp_count + dvar.arp_count + dvar.igmp_count
         )
+        unrecognized_count = dvar.not_analyzed_ip_count + dvar.not_analyzed_not_ip_count
         coarse_pps = recognized_count / (end_timer - start_timer)
+        dvar_dict = vars(dvar).copy()
+        # TODO determine if we really want to remove the pairs from the output or output something
+        # dvar_dict.pop("tcp")
+        # dvar_dict.pop("udp")
+        # dvar_dict.pop("arp")
         long_string = (
-            f"read={recognized_count} pps={coarse_pps} "
-            f"tcp_count={self.dvar.tcp_count} udp_count={self.dvar.udp_count} arp_count={self.dvar.arp_count} igmp_count={self.dvar.igmp_count} "
-            f"tcp_pairs={self.dvar.tcp} udp_pairs={self.dvar.udp} "
-            f"not_analyzed_ip={self.dvar.not_analyzed_ip_count} not_analyzed_not_ip={self.dvar.not_analyzed_not_ip_count}"
+            f"recognized={recognized_count} unrecognized={unrecognized_count} pps={coarse_pps} "
+            f"{dvar_dict}"
         )
         self.logger.info(long_string)
         self.logger.info("Exiting thread")
@@ -149,6 +132,43 @@ class PacketAnalyse:
         result.count = pack_count
 
         return result
+
+    # The return code just says we categorized as non-ip not that we detected specific non-IP
+    def find_non_ip(self, packet_dict, dvar):
+        if not self.find_arp(packet_dict, dvar):
+            # TODO probably should filter out any with ip.proto or an ipv6.<something> and return False
+            dvar.not_analyzed_not_ip_count += 1
+            # Could look for things like ipx for non IP
+            self.logger.debug("Packet was not IP not ARP")
+            # should this be debug() info() or warn() You could have a lot of these
+            self.logger.debug(
+                "Packet not analyzed: No detector for non IP %s", packet_dict
+            )
+        return True
+
+    # Cover for all the IP based detectors
+    # The return code says we categorized as IP - not that detected specific IP
+    def find_ip(self, packet_dict, dvar):
+        if not self.find_tcp(packet_dict, dvar):
+            if not self.find_udp(packet_dict, dvar):
+                if not self.find_igmp(packet_dict, dvar):
+                    # Can't filter on ip.proto at the top because of IPv6 picked up in the detectors
+                    if "ip.proto" in packet_dict:
+                        dvar.not_analyzed_ip_count += 1
+                        # ip.proto does not always exist if not ip
+                        self.logger.debug("Packet was IPv4 but not TCP, UDP, IGMP ")
+                        packet_ip_proto = packet_dict["ip.proto"]
+                        dvar.not_analyzed_ip.add(packet_ip_proto)
+                        # should this be debug() info() or warn() You could have a lot of these
+                        self.logger.debug(
+                            "Packet not analyzed: no detector for IP protocol: %s",
+                            packet_ip_proto,
+                        )
+                    else:
+                        # TODO: Capture ipv6.<something> to put it in the ip not analyzed bucket
+                        # TODO: Unrecognized IPv6 may leak out of here and get categorized as non IP
+                        return False
+        return True
 
     # Picks interested attributes from packets and saves them into a list
     def find_tcp(self, packet_dict, dvar):
@@ -230,6 +250,7 @@ class PacketAnalyse:
 
     def find_udp(self, packet_dict, dvar):
         success = False
+        # filters out IPV4 non UDP - could still have IPv6 UDP
         if "ip.proto" in packet_dict and (packet_dict["ip.proto"] != "17"):
             return success
 
