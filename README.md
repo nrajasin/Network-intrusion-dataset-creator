@@ -121,6 +121,7 @@ You can find the original research paper on [researchgate](https://www.researchg
 1. Force multiprocessing to run in `fork` mode.  Linux does this natively.  Mac Python 3.8 and later use `Spawn`
 1. Added unit tests
 1. Minimal requirements.txt added back
+1. Now counts non IP packets that were not analyzed separately from IP packets not analyzed
 
 ## References
 1. Time and Count based Tumbling Windows for Network Packet Statistics https://youtu.be/6xa0fqRYpZM
