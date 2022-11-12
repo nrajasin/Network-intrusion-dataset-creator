@@ -1,0 +1,65 @@
+version: 1
+disable_existing_loggers: true
+formatters:
+  brief:
+    format: "%(levelname)-8s; %(name)-15s; %(message)s"
+  single_line:
+    format: "%(asctime)s; %(levelname)-8s; %(name)-15s; %(funcName)-15s;%(lineno)4d; %(message)s"
+  multi_thread:
+    format: "%(asctime)s; %(levelname)-8s; [%(thread;)s]; %(name)-15s; %(funcName)-15s;%(lineno)-4d; %(message)s"
+  multi_process:
+    format: "%(asctime)s; %(levelname)-8s; [%(process)d]; %(name)-15s; %(funcName)-15s;%(lineno)-4d; %(message)s"
+  multi_line:
+    format:
+      "Level: %(levelname)s\nTime: %(asctime)s\nProcess: %(process)d\nThread: %(thread)s\nLogger: %(name)s\nPath: %(module)s:%(lineno)d\nFunction :%(funcName)s\nMessage: %(message)s\n"
+handlers:
+  console:
+    level: INFO
+    class: logging.StreamHandler
+    formatter: multi_process
+    stream: ext://sys.stdout
+  info_file_handler:
+    level: INFO
+    class: logging.handlers.WatchedFileHandler
+    formatter: multi_process
+    filename: ./info.log
+    # file behavior a=append w=overwrite
+    mode: w
+    encoding: utf-8
+  error_file_handler:
+    level: WARNING
+    class: logging.handlers.WatchedFileHandler
+    formatter: multi_process
+    filename: ./errors.log
+    # file behavior a=append w=overwrite
+    mode: w
+    encoding: utf-8
+  debug_file_handler:
+    level: DEBUG
+    class: logging.handlers.WatchedFileHandler
+    formatter: multi_process
+    filename: ./debug.log
+    # file behavior a=append w=overwrite
+    mode: w
+    encoding: utf-8
+loggers:
+  capture:
+    #level: INFO
+    handlers: [error_file_handler, info_file_handler, debug_file_handler]
+  services:
+    #level: INFO
+    handlers: [error_file_handler, info_file_handler, debug_file_handler]
+  detectors:
+    #level: INFO
+    handlers: [error_file_handler, info_file_handler, debug_file_handler]
+  counts:
+    #level: INFO
+    handlers: [error_file_handler, info_file_handler, debug_file_handler]
+  __main__:
+    #level: INFO
+    handlers: [error_file_handler, debug_file_handler]
+
+root:
+  level: INFO
+  handlers:
+    - console

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # MIT License
 
 # Copyright (c) 2018 nrajasin
@@ -20,128 +21,158 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-
-import threading
-import subprocess
-import json
-from queue import *
-import ipaddress
-import set
+from settings import AppSettings
 from detectors import *
 from services import *
 from counts import *
-
-set.tcp_count=0
-set.udp_count=0
-set.packet_count=0
-
-
-
-## capture packets using wireshark and convert them to python dictionary objects
-class packetcap (threading.Thread):
-	def __init__(self, threadID, name):
-		threading.Thread.__init__(self)
-		self.threadID = threadID
-		self.name = name
-	def run(self):
-		cmd = "sudo tshark -V -l -T json"
-		p = subprocess.Popen(cmd, stdout=subprocess.PIPE, bufsize=1, shell=True, universal_newlines=True)
-		json_str = ""
-		for line  in p.stdout:
-			
-			if line.strip() == '[':
-				continue
-			if line.strip() in [',', ']']:
-				json_obj = json.loads(json_str.strip())
-				source_filter = json_obj['_source']['layers']
-				keyval=source_filter.items()
-				set.allkeyval={}
-				a=unwrap(keyval,{})
-
-				
-				json_str = ""
-				
-				send_data(a)
-
-			else:
-				json_str += line
-		p.stdout.close()
-		p.wait()
-
-## separate out tcp,udp and arp traffic
-
-class packetanalyze (threading.Thread):
-	def __init__(self, threadID, name):
-		threading.Thread.__init__(self)
-		self.threadID = threadID
-		self.name = name
-	def run(self):
-		while True:
-			if set.sharedQ.empty()==False:
-
-				fortcp=set.sharedQ.get()
-				
-				Data=fortcp
-			
-				Tcp(Data)
+from capture import *
+import argparse
+import queues
+import multiprocessing as mp
+import logging
+import sys
+from loggingconfig import load_logging
 
 
-			if set.notTCP.empty()==False:
-				
-				forudp=set.notTCP.get()
-				
-				Udp(forudp)
+def main():
+    load_logging()
+    logger = logging.getLogger(__name__)
+    # as of 2022/10 this only works with fork mode with in memory queues
+    logger.info(
+        "multiprocessing start method: %s out of %s",
+        mp.get_start_method(),
+        mp.get_all_start_methods(),
+    )
+
+    # load the settings
+    settings = AppSettings()
+
+    parser = argparse.ArgumentParser(
+        description="Create time/count window statistics for tshark pcap stream or file"
+    )
+    parser.add_argument(
+        "-s",
+        "--sourcefile",
+        default=settings.input_file_name,
+        help="provide a pcap input file name instead of reading live stream",
+        action="store",
+    )
+    parser.add_argument(
+        "-i",
+        "--interface",
+        default=settings.interface,
+        help="use an interface.  [" + settings.interface + "]",
+        action="store",
+    )
+    parser.add_argument(
+        "-l",
+        "--howlong",
+        default=settings.how_long,
+        help="number of seconds to run live mode. [" + str(settings.how_long) + "]",
+        action="store",
+        type=int,
+    )
+    parser.add_argument(
+        "-o",
+        "--outfile",
+        default=settings.output_file_name,
+        help="change the name of the output file [" + settings.output_file_name + "]",
+        action="store",
+    )
+    parser.add_argument(
+        "-wt",
+        "--windowtime",
+        default=settings.time_window,
+        help="size of time window in msec [" + str(settings.time_window) + "]",
+        action="store",
+        type=int,
+    )
+    parser.add_argument(
+        "-wp",
+        "--windowpackets",
+        default=settings.packet_window,
+        help="maximum number of packets in a window ["
+        + str(settings.packet_window)
+        + "]",
+        action="store",
+        type=int,
+    )
+    parser.add_argument(
+        "-t",
+        "--tshark",
+        default=settings.tshark_program,
+        help="tshark program [" + settings.tshark_program + "]",
+        action="store",
+    )
+    args = parser.parse_args()
+    logger.info("main:main Running with: %s", vars(args))
+
+    if args.sourcefile:
+        settings.input_file_name = args.sourcefile
+    if args.interface:
+        settings.interface = args.interface
+    if args.howlong:
+        settings.how_long = args.howlong
+    if args.outfile:
+        settings.output_file_name = args.outfile
+    if args.windowtime:
+        settings.time_window = args.windowtime
+    if args.windowpackets:
+        settings.packet_window = args.windowpackets
+    if args.tshark:
+        settings.tshark_program = args.tshark
+
+    if settings.time_window is None and settings.packet_window is None:
+        logger.error(
+            "Must specifiy either the time window or the packet count window see --help"
+        )
+        sys.exit(2)
+
+    data_collect = PacketCapture(
+        "packet capture packet_dict",
+        settings.tshark_program,
+        settings.input_file_name,
+        settings.interface,
+        settings.how_long,
+        queues.sharedQ,
+    )
+    data_c_p = mp.Process(target=data_collect.run)
+    data_c_p.start()
+    # if not data_c_p:
+    #     self.logger.info("tshark may not be installed try 'sudo apt install tshark'")
+    #     return
+
+    data_process = PacketAnalyse(
+        "packet analyzing thread", queues.sharedQ, queues.serviceQ
+    )
+    data_p_p = mp.Process(target=data_process.run)
+    data_p_p.start()
+
+    services_process = ServiceIdentity(
+        "service detecter", queues.serviceQ, queues.timesQ
+    )
+    services_p_p = mp.Process(target=services_process.run)
+    services_p_p.start()
+
+    time_counts = TimesAndCounts(
+        "time the packets",
+        settings.time_window,
+        settings.packet_window,
+        settings.output_file_name,
+        queues.timesQ,
+    )
+    time_c_p = mp.Process(target=time_counts.run)
+    time_c_p.start()
+
+    data_c_p.join()
+    data_p_p.join()
+    services_p_p.join()
+    time_c_p.join()
+
+    logger.info("Party like its 1999")
 
 
-			if set.notUDP.empty()==False:
-				forarp=set.notUDP.get()
-				Arp(forarp)
-
-
-
-## saves each dictionary object into a Queue
-
-def send_data(dictionary):
-	
-	set.packet_count =set.packet_count+1
-	# if set.packet_count < 50000:
-		
-	set.sharedQ.put(dictionary)
-
-
-
-
-## this function unwraps a multi level JSON object into a python dictionary with key value pairs
-
-
-def unwrap(keyval,temp):
-	
-	for key1,value1 in keyval:
-		if type(value1)== str :
-			
-			temp[key1]=value1
-
-			
-		else:
-			
-			unwrap(value1.items(),temp)
-
-					
-	return(temp)
-
-
-
-datacollect = packetcap (1, 'packet capture data')
-datacollect.start()
-
-dataprocess = packetanalyze (2,'packet analyzing thread')
-dataprocess.start()
-
-dataservices =  services (3 ,'service analyzing thread')
-dataservices.start()
-
-
-
-timecounts =  times (4 ,'time the packets')
-timecounts.start()
-
+if __name__ == "__main__":
+    # Required for Mac Python 3.8+
+    mp.set_start_method("fork", force=True)
+    main()

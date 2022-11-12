@@ -20,65 +20,76 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-
-global instance
-instance=1
-global localdat
-localdat={}
+# cvars should only be used from counts.py
+# this was probably count vars in the original program
+# every property in here should/will end up in the csv output.
 
 
-global tcp_frame_length
-tcp_frame_length=0
-global tcp_ip_length
-tcp_ip_length=0
-global tcp_length
-tcp_length=0
+class windowcounts:
 
-global udp_frame_length
-udp_frame_length=0
-global udp_ip_length
-udp_ip_length=0
-global udp_length
-udp_length=0
+    # msec since the epoch
+    window_start_time = 0
+    # msec since the epoch
+    window_end_time = 0
 
-global arp_frame_length
-arp_frame_length=0
+    # mostly used for human debugging
+    window_index = 1
 
-global src_length
-src_length=0
+    # frame.len
+    tcp_frame_length = 0
+    # ip.len
+    tcp_ip_length = 0
+    # tcp.len
+    tcp_length = 0
 
-global dst_length
-dst_length=0
+    # frame.len
+    udp_frame_length = 0
+    # ip.len
+    udp_ip_length = 0
+    # udp.length
+    udp_length = 0
 
+    # frame.len
+    arp_frame_length = 0
 
-global ssl
-ssl=0
-global http
-http=0
-global ftp
-ftp=0
-global ssh
-ssh=0
-global dns
-dns=0
-global smtp
-smtp=0
-global dhcp
-dhcp=0
+    # TCP / UDP service counts for an individual window
+    num_tls = 0
+    num_http = 0
+    num_ftp = 0
+    num_ssh = 0
+    num_dns = 0
+    num_smtp = 0
+    num_dhcp = 0
+    num_nbns = 0
+    num_smb = 0
+    num_smb2 = 0
+    num_pnrp = 0
 
-global tcp
-tcp=0
-global udp
-udp=0
-global arp
-arp=0
+    # derived from broadcast address and port
+    num_wsdd = 0
+    # derived from broadcast address and port
+    num_ssdp = 0
 
-global IDs
-IDs=[]
+    # protocol counts for an individual window
+    num_tcp = 0
+    num_udp = 0
+    num_arp = 0
+    num_igmp = 0
 
+    # all the calculated src/dst combinations
+    IDs = set()
+    # all the ports in this window
+    ports = set()
 
-global ports
-ports=[]
+    # number of packets included in this window
+    num_packets = 0
 
-global tot_pack
-tot_pack=0
+    # The class "constructor" - It's actually an initializer
+    # Not sure why but non primitives must be initialized
+    def __init__(self, window_start_time=None, window_index=0):
+        self.num_packets = 0
+        self.IDs = set()
+        self.ports = set()
+        self.window_start_time = window_start_time
+        self.window_end_time = window_start_time
+        self.window_index = window_index

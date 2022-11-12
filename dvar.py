@@ -21,66 +21,43 @@
 # SOFTWARE.
 
 
+class datasetSummary:
 
-from queue import *
-import set
+    # counters across all processing across all windows
 
-global packet_count
-packet_count=0
-global tcp_count
-tcp_count=0
-global udp_count
-udp_count=0
-global arp_count
-arp_count=0
+    # set in detectors
+    tcp_count = 0
+    # set in detectors
+    udp_count = 0
+    # set in detectors
+    arp_count = 0
+    # set in detectors
+    igmp_count = 0
 
-global allkeyval
-allkeyval={}
+    # set in detectors
+    not_analyzed_ip = set()
+    # set in detectors
+    not_analyzed_ip_count = 0
 
-global sharedQ
-sharedQ=Queue()
+    # set in detectors
+    not_analyzed_not_ip_count = 0
 
-global notTCP
-notTCP=Queue() 
+    # set in detectors
+    tcp = {}
+    # set in detectors
+    udp = {}
+    # set in detectors
+    arp = {}
 
-global notUDP
-notUDP=Queue() 
-
-global notARP
-notARP=Queue() 
-
-global tcp
-tcp={}
-
-global tcpQ
-tcpQ=Queue()
-
-global udp
-udp={}
-
-global udpQ
-udpQ=Queue()
-
-global arp
-arp={}
-
-global arpQ
-arpQ=Queue()
-
-global servicesQ
-servicesQ=Queue()
-
-global timesQ
-timesQ=Queue()
-
-global timed
-timed=Queue()
-
-global Dataset
-Dataset={}
-
-global starting
-starting=0
-
-global howlong
-howlong=60000
+    # Is this required if want a vars(dvar) call to return zeros
+    def __init__(self):
+        self.tcp_count = 0
+        self.udp_count = 0
+        self.arp_count = 0
+        self.igmp_count = 0
+        self.not_analyzed_ip_count = 0
+        self.not_analyzed_ip = set()
+        self.not_analyzed_not_ip_count = 0
+        self.tcp = {}
+        self.udp = {}
+        self.arp = {}

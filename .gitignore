@@ -1,2 +1,12 @@
 ./__pycache__/
 ./dataset_creator_with_foreign_PCAP/__pycache__/
+
+__pycache__
+.DS_Store
+*.csv
+*.pcap
+*.pcapng
+*.cap
+*.json
+*.gz
+*.log

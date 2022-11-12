@@ -20,205 +20,392 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+# Protocol detectors
 
-
-
+import transitkeys
 import ipaddress
-import set
-from services import *
+import time
+from dvar import datasetSummary
+from pairstats import pair_stats_tcp
+from pairstats import pair_stats_udp
+from pairstats import pair_stats_arp
+import logging
 
-## Picks interested attributes from packets and saves them into a list
-
-def Tcp(Data):
-	
-	try:
-
-		if 'tcp.srcport' in Data and ( int(ipaddress.ip_address(Data['ip.src']))+int(ipaddress.ip_address(Data['ip.dst']))  in set.tcp.keys() or int(ipaddress.ip_address(Data['ip.dst']))+int(ipaddress.ip_address(Data['ip.src'])) in set.tcp.keys() ):
-			
-			try:
-				ky=int(ipaddress.ip_address(Data['ip.src']))+int(ipaddress.ip_address(Data['ip.dst']))
-				temp=set.tcp[ky]
-			except KeyError:
-				ky=int(ipaddress.ip_address(Data['ip.dst']))+int(ipaddress.ip_address(Data['ip.src']))
-				temp=set.tcp[ky]
-			pack_count=temp[len(temp)-1]
-			pack_count=pack_count+1
-			# print(pack_count)
-			set.servicesQ.put([ky,Data,"tcp"])
-
-			temp.append(Data['ip.src'])
-			temp.append(Data['ip.dst'])
-			temp.append(Data['tcp.flags.res'])
-			temp.append(Data['tcp.flags.ns'])
-			temp.append(Data['tcp.flags.cwr'])
-			temp.append(Data['tcp.flags.ecn'])
-			temp.append(Data['tcp.flags.urg'])
-			temp.append(Data['tcp.flags.ack'])
-			temp.append(Data['tcp.flags.push'])
-			temp.append(Data['tcp.flags.reset'])
-			temp.append(Data['tcp.flags.syn'])
-			temp.append(Data['tcp.flags.fin'])
-			temp.append(pack_count)
-			
-			
-			set.tcp[ky]=temp
-			set.tcp_count=set.tcp_count+1
-		elif 'ip.src' in Data and 'tcp.flags.syn' in Data :
-						
-					
-			status=[]
-			pack_count=1
-
-			status.append(Data['ip.src'])
-			
-			status.append(Data['ip.dst'])
-			
-			status.append(Data['tcp.flags.res'])
-			status.append(Data['tcp.flags.ns'])
-			status.append(Data['tcp.flags.cwr'])
-			status.append(Data['tcp.flags.ecn'])
-			status.append(Data['tcp.flags.urg'])
-			status.append(Data['tcp.flags.ack'])
-			status.append(Data['tcp.flags.push'])
-			status.append(Data['tcp.flags.reset'])
-			status.append(Data['tcp.flags.syn'])
-			status.append(Data['tcp.flags.fin'])
-			status.append(pack_count)
-			set.tcp[int(ipaddress.ip_address(Data['ip.src']))+int(ipaddress.ip_address(Data['ip.dst']))]=status
-			set.servicesQ.put([int(ipaddress.ip_address(Data['ip.src']))+int(ipaddress.ip_address(Data['ip.dst'])),Data,"tcp"])
-			set.tcp_count=set.tcp_count+1
-		else:
-			set.notTCP.put(Data)
-			
-	except AttributeError:
-		print( Data)		
+# separate out tcp,udp and arp traffic
 
 
+class PacketAnalyse:
+    def __init__(self, name, inQ, outQ):
+        self.logger = logging.getLogger(__name__)
+        self.name = name
+        self.inQ = inQ
+        self.outQ = outQ
 
-def Udp (Data):
-	
-	
+    def run(self):
+        dvar = datasetSummary()
+        start_timer = time.perf_counter()
+        self.logger.info("Starting")
+        while True:
+            if not self.inQ.empty():
+                thePacket = self.inQ.get()
+                if not thePacket:
+                    self.logger.debug("We're done - empty dictionary received on queue")
+                    self.outQ.put([])
+                    break
+                if not self.find_ip(thePacket, dvar):
+                    self.find_non_ip(thePacket, dvar)
+        end_timer = time.perf_counter()
+        recognized_count = (
+            dvar.tcp_count + dvar.udp_count + dvar.arp_count + dvar.igmp_count
+        )
+        unrecognized_count = dvar.not_analyzed_ip_count + dvar.not_analyzed_not_ip_count
+        coarse_pps = recognized_count / (end_timer - start_timer)
+        dvar_dict = vars(dvar).copy()
+        # TODO determine if we really want to remove the pairs from the output or output something
+        # dvar_dict.pop("tcp")
+        # dvar_dict.pop("udp")
+        # dvar_dict.pop("arp")
+        long_string = (
+            f"recognized={recognized_count} unrecognized={unrecognized_count} pps={coarse_pps} "
+            f"{dvar_dict}"
+        )
+        self.logger.info(long_string)
+        self.logger.info("Exiting thread")
 
-	try:
+    # orders the src and dst before hashing
+    # pass in strings that are the ip addresses from the packet
+    def gen_src_dst_key(self, src, dst):
+        if src < dst:
+            return str(ipaddress.ip_address(src)) + "-" + str(ipaddress.ip_address(dst))
+        else:
+            return str(ipaddress.ip_address(dst)) + "-" + str(ipaddress.ip_address(src))
 
-		if 'udp.srcport' in Data  and ( int(ipaddress.ip_address(Data['ip.src']))+int(ipaddress.ip_address(Data['ip.dst']))  in set.udp.keys() or int(ipaddress.ip_address(Data['ip.dst']))+int(ipaddress.ip_address(Data['ip.src'])) in set.udp.keys() ):
-		
-			try:
-				ky=int(ipaddress.ip_address(Data['ip.src']))+int(ipaddress.ip_address(Data['ip.dst']))
-				temp=set.udp[ky]
-			except KeyError:
-				ky=int(ipaddress.ip_address(Data['ip.dst']))+int(ipaddress.ip_address(Data['ip.src']))
-				temp=set.udp[ky]
-			
-			set.servicesQ.put([ky,Data,"udp"])
+    # orders the src and dst before hashing
+    # pass in strings that are the ip addresses from the packet
+    def gen_ipv6_src_dst_key(self, src, dst):
+        if src < dst:
+            return (
+                str(ipaddress.IPv6Address(src)) + "-" + str(ipaddress.IPv6Address(dst))
+            )
+        else:
+            return (
+                str(ipaddress.IPv6Address(dst)) + "-" + str(ipaddress.IPv6Address(src))
+            )
 
-			
-			set.udp_count=set.udp_count+1
-		
-		
-		elif 'udp.srcport' in Data:
+    # tcp, ipand arp are separate in case they want to add custom properties like lists of port combos
+    # we mutate a parameter. oh the horror!
+    def gen_tcp_stats(self, existing_stats, packet_dict, srcKey, dstKey):
+        pack_count = 0
+        if existing_stats:
+            pack_count = existing_stats.count
+            pack_count += 1
 
+        result = pair_stats_tcp()
+        result.src = packet_dict[srcKey]
+        result.dst = packet_dict[dstKey]
+        result.count = pack_count
 
-			status=[]
-			# status.append(Data)
-			status.append(Data['ip.src'])
-			status.append(Data['ip.dst'])
-			status.append(Data['udp.srcport'])
-			status.append(Data['udp.dstport'])
-			status.append(1)
-			set.udp[int(ipaddress.ip_address(Data['ip.src']))+int(ipaddress.ip_address(Data['ip.dst']))]=status
-			set.servicesQ.put([int(ipaddress.ip_address(Data['ip.src']))+int(ipaddress.ip_address(Data['ip.dst'])),Data,"udp"])
-			set.udp_count=set.udp_count+1
+        return result
 
-			
-		else:
+    def gen_udp_stats(self, existing_stats, packet_dict, srcKey, dstKey):
+        pack_count = 0
+        if existing_stats:
+            pack_count = existing_stats.count
+            pack_count += 1
 
-			set.notUDP.put(Data)
+        result = pair_stats_udp()
+        result.src = packet_dict[srcKey]
+        result.dst = packet_dict[dstKey]
+        result.count = pack_count
 
-	except KeyError:
+        return result
 
-		if 'udp.srcport' in Data  and ( int(ipaddress.IPv6Address(Data['ipv6.src']))+int(ipaddress.IPv6Address(Data['ipv6.dst']))  in set.udp.keys() or int(ipaddress.IPv6Address(Data['ipv6.dst']))+int(ipaddress.IPv6Address(Data['ipv6.src'])) in set.udp.keys() ):
-		#if 'tcp.dstport' in Data :
-			try:
-				ky=int(ipaddress.IPv6Address(Data['ipv6.src']))+int(ipaddress.IPv6Address(Data['ipv6.dst']))
-				temp=set.udp[ky]
-			except KeyError:
-				ky=int(ipaddress.IPv6Address(Data['ipv6.dst']))+int(ipaddress.IPv6Address(Data['ipv6.src']))
-				temp=set.udp[ky]
-			# print(Data)
-			
-			# if temp[2]==Data['udp.dstport'] and temp[3]==Data['udp.srcport']:
-				# print('Udp connection detected')
-			set.servicesQ.put([ky,Data,"udp"])
-			
-			set.udp_count=set.udp_count+1
-		# elif 'udp.srcport' in Data and 'ip.dst_host' in Data and Data['ip.src'] in set.udp.keys():
-		# 	temp=set.udp[Data['ip.src']]
-		# 	if temp[2]==Data['udp.srcport'] and temp[3]==Data['udp.dstport']:
-		# 		count=temp[4]+1
-		# 		temp[4]=count
-		
-		elif 'udp.srcport' in Data:
-			status=[]
-			status.append(Data['ipv6.src'])
-			status.append(Data['ipv6.dst'])
-			status.append(Data['udp.srcport'])
-			status.append(Data['udp.dstport'])
-			status.append(1)
-			set.udp[int(ipaddress.IPv6Address(Data['ipv6.src']))+int(ipaddress.IPv6Address(Data['ipv6.dst']))]=status
-			set.servicesQ.put([int(ipaddress.IPv6Address(Data['ipv6.src']))+int(ipaddress.IPv6Address(Data['ipv6.dst'])),Data,"udp"])
-			
-			set.udp_count=set.udp_count+1
-		else:
-			set.notUDP.put(Data)
+    def gen_arp_stats(self, existing_stats, packet_dict, srcKey, dstKey):
+        pack_count = 0
+        if existing_stats:
+            pack_count = existing_stats.count
+            pack_count += 1
 
+        result = pair_stats_arp()
+        result.src = packet_dict[srcKey]
+        result.dst = packet_dict[dstKey]
+        result.count = pack_count
 
-def Arp (Data):
+        return result
 
-	try:
+    # The return code just says we categorized as non-ip not that we detected specific non-IP
+    def find_non_ip(self, packet_dict, dvar):
+        if not self.find_arp(packet_dict, dvar):
+            # TODO probably should filter out any with ip.proto or an ipv6.<something> and return False
+            dvar.not_analyzed_not_ip_count += 1
+            # Could look for things like ipx for non IP
+            self.logger.debug("Packet was not IP not ARP")
+            # should this be debug() info() or warn() You could have a lot of these
+            self.logger.debug(
+                "Packet not analyzed: No detector for non IP %s", packet_dict
+            )
+        return True
 
+    # Cover for all the IP based detectors
+    # The return code says we categorized as IP - not that detected specific IP
+    def find_ip(self, packet_dict, dvar):
+        if not self.find_tcp(packet_dict, dvar):
+            if not self.find_udp(packet_dict, dvar):
+                if not self.find_igmp(packet_dict, dvar):
+                    # Can't filter on ip.proto at the top because of IPv6 picked up in the detectors
+                    if "ip.proto" in packet_dict:
+                        dvar.not_analyzed_ip_count += 1
+                        # ip.proto does not always exist if not ip
+                        self.logger.debug("Packet was IPv4 but not TCP, UDP, IGMP ")
+                        packet_ip_proto = packet_dict["ip.proto"]
+                        dvar.not_analyzed_ip.add(packet_ip_proto)
+                        # should this be debug() info() or warn() You could have a lot of these
+                        self.logger.debug(
+                            "Packet not analyzed: no detector for IP protocol: %s",
+                            packet_ip_proto,
+                        )
+                    else:
+                        # TODO: Capture ipv6.<something> to put it in the ip not analyzed bucket
+                        # TODO: Unrecognized IPv6 may leak out of here and get categorized as non IP
+                        return False
+        return True
 
-		if 'arp.src.proto_ipv4' in Data and ( int(ipaddress.ip_address(Data['arp.src.proto_ipv4']))+int(ipaddress.ip_address(Data['arp.dst.proto_ipv4']))  in set.arp.keys() or int(ipaddress.ip_address(Data['arp.dst.proto_ipv4']))+int(ipaddress.ip_address(Data['arp.src.proto_ipv4'])) in set.arp.keys() ):
-			
-			try:
-				ky=int(ipaddress.ip_address(Data['arp.src.proto_ipv4']))+int(ipaddress.ip_address(Data['arp.dst.proto_ipv4']))
-				temp=set.arp[ky]
-			except KeyError:
-				ky=int(ipaddress.ip_address(Data['arp.dst.proto_ipv4']))+int(ipaddress.ip_address(Data['arp.src.proto_ipv4']))
-				temp=set.arp[ky]
+    # Picks interested attributes from packets and saves them into a list
+    def find_tcp(self, packet_dict, dvar):
+        success = False
+        if "ip.proto" in packet_dict and (packet_dict["ip.proto"] != "6"):
+            return success
 
-			pack_count=temp[len(temp)-1]
-			pack_count=pack_count+1
-			
-			temp.append(Data['arp.src.proto_ipv4'])
-			temp.append(Data['arp.dst.proto_ipv4'])
-			temp.append(Data['arp.src.hw_mac'])
-			temp.append(Data['arp.dst.hw_mac'])
-			temp.append(pack_count)
-			set.servicesQ.put([ky,Data,"arp"])
-			
-			set.arp_count=set.arp_count+1
-		elif 'arp.src.proto_ipv4' in Data :
+        try:
+            if (
+                "tcp.srcport" in packet_dict
+                and self.gen_src_dst_key(packet_dict["ip.src"], packet_dict["ip.dst"])
+                in dvar.tcp.keys()
+            ):
+                packet_key = self.gen_src_dst_key(
+                    packet_dict["ip.src"], packet_dict["ip.dst"]
+                )
+                status = dvar.tcp[packet_key]
+                self.logger.debug("%s, %s", packet_key, status)
+                dvar.tcp[packet_key] = self.gen_tcp_stats(
+                    status, packet_dict, "ip.src", "ip.dst"
+                )
+                dvar.tcp_count += 1
 
-						
-					# print('Tcp connection initiated')
-			status=[]
-			pack_count=1
-			# status.append('ip.src')
-			status.append(Data['arp.src.proto_ipv4'])
-			# status.append('ip.dst')
-			status.append(Data['arp.dst.proto_ipv4'])
-			# status.append('tcp.flags.syn')
-			status.append(Data['arp.src.hw_mac'])
-			status.append(Data['arp.dst.hw_mac'])
-			
-			status.append(pack_count)
-			set.arp[int(ipaddress.ip_address(Data['arp.src.proto_ipv4']))+int(ipaddress.ip_address(Data['arp.dst.proto_ipv4']))]=status
-			set.servicesQ.put([int(ipaddress.ip_address(Data['arp.src.proto_ipv4']))+int(ipaddress.ip_address(Data['arp.dst.proto_ipv4'])),Data,"arp"])
-			set.arp_count=set.arp_count+1
-		else:
-			set.notARP.put(Data)
-			
-			
-	except AttributeError:
-		print( Data)		
+                self.send(packet_key, packet_dict, "tcp")
+                success = True
+            elif "ip.src" in packet_dict and "tcp.flags.syn" in packet_dict:
+
+                packet_key = self.gen_src_dst_key(
+                    packet_dict["ip.src"], packet_dict["ip.dst"]
+                )
+                dvar.tcp[packet_key] = self.gen_tcp_stats(
+                    {}, packet_dict, "ip.src", "ip.dst"
+                )
+                dvar.tcp_count += 1
+
+                self.send(packet_key, packet_dict, "tcp")
+                success = True
+            else:
+                success = False
+        except KeyError:
+            if (
+                "tcp.srcport" in packet_dict
+                and self.gen_ipv6_src_dst_key(
+                    packet_dict["ipv6.src"], packet_dict["ipv6.dst"]
+                )
+                in dvar.tcp.keys()
+            ):
+
+                packet_key = self.gen_ipv6_src_dst_key(
+                    packet_dict["ipv6.src"], packet_dict["ipv6.dst"]
+                )
+                status = dvar.tcp[packet_key]
+                self.logger.debug("{packet_key} {status}")
+                dvar.tcp[packet_key] = self.gen_tcp_stats(
+                    status, packet_dict, "ipv6.src", "ipv6.dst"
+                )
+                dvar.tcp_count += 1
+
+                self.send(packet_key, packet_dict, "tcp")
+                success = True
+            elif "ipv6.src" in packet_dict and "tcp.flags.syn" in packet_dict:
+
+                packet_key = self.gen_ipv6_src_dst_key(
+                    packet_dict["ipv6.src"], packet_dict["ipv6.dst"]
+                )
+                dvar.tcp[packet_key] = self.gen_tcp_stats(
+                    {}, packet_dict, "ipv6.src", "ipv6.dst"
+                )
+                dvar.tcp_count += 1
+
+                self.send(packet_key, packet_dict, "tcp")
+                success = True
+            else:
+                success = False
+
+        except AttributeError:
+            self.logger.info("%s", packet_dict)
+        return success
+
+    def find_udp(self, packet_dict, dvar):
+        success = False
+        # filters out IPV4 non UDP - could still have IPv6 UDP
+        if "ip.proto" in packet_dict and (packet_dict["ip.proto"] != "17"):
+            return success
+
+        try:
+
+            if (
+                "udp.srcport" in packet_dict
+                and self.gen_src_dst_key(packet_dict["ip.src"], packet_dict["ip.dst"])
+                in dvar.udp.keys()
+            ):
+
+                packet_key = self.gen_src_dst_key(
+                    packet_dict["ip.src"], packet_dict["ip.dst"]
+                )
+                status = dvar.udp[packet_key]
+                dvar.udp[packet_key] = self.gen_udp_stats(
+                    status, packet_dict, "ip.src", "ip.dst"
+                )
+                dvar.udp_count += 1
+
+                self.send(packet_key, packet_dict, "udp")
+                success = True
+            elif "udp.srcport" in packet_dict:
+
+                packet_key = self.gen_src_dst_key(
+                    packet_dict["ip.src"], packet_dict["ip.dst"]
+                )
+                dvar.udp[packet_key] = self.gen_udp_stats(
+                    {}, packet_dict, "ip.src", "ip.dst"
+                )
+                dvar.udp_count += 1
+
+                self.send(packet_key, packet_dict, "udp")
+                success = True
+            else:
+                success = False
+        except KeyError:
+
+            if (
+                "udp.srcport" in packet_dict
+                and self.gen_ipv6_src_dst_key(
+                    packet_dict["ipv6.src"], packet_dict["ipv6.dst"]
+                )
+                in dvar.udp.keys()
+            ):
+
+                packet_key = self.gen_ipv6_src_dst_key(
+                    packet_dict["ipv6.src"], packet_dict["ipv6.dst"]
+                )
+                status = dvar.udp[packet_key]
+
+                dvar.udp[packet_key] = self.gen_udp_stats(
+                    status, packet_dict, "ipv6.src", "ipv6.dst"
+                )
+                dvar.udp_count += 1
+
+                self.send(packet_key, packet_dict, "udp")
+                success = True
+            elif "udp.srcport" in packet_dict:
+                packet_key = self.gen_ipv6_src_dst_key(
+                    packet_dict["ipv6.src"], packet_dict["ipv6.dst"]
+                )
+                dvar.udp[packet_key] = self.gen_udp_stats(
+                    {}, packet_dict, "ipv6.src", "ipv6.dst"
+                )
+                dvar.udp_count += 1
+
+                self.send(packet_key, packet_dict, "udp")
+                success = True
+            else:
+                success = False
+        return success
+
+    def find_arp(self, packet_dict, dvar):
+
+        success = False
+        try:
+
+            if (
+                "arp.src.proto_ipv4" in packet_dict
+                and self.gen_src_dst_key(
+                    packet_dict["arp.dst.proto_ipv4"], packet_dict["arp.src.proto_ipv4"]
+                )
+                in dvar.arp.keys()
+            ):
+                packet_key = self.gen_src_dst_key(
+                    packet_dict["arp.src.proto_ipv4"],
+                    packet_dict["arp.dst.proto_ipv4"],
+                )
+                status = dvar.arp[packet_key]
+                dvar.arp[packet_key] = self.gen_arp_stats(
+                    status, packet_dict, "arp.src.proto_ipv4", "arp.dst.proto_ipv4"
+                )
+                dvar.arp_count += 1
+
+                self.send(packet_key, packet_dict, "arp")
+                success = True
+            elif "arp.src.proto_ipv4" in packet_dict:
+
+                packet_key = self.gen_src_dst_key(
+                    packet_dict["arp.src.proto_ipv4"], packet_dict["arp.dst.proto_ipv4"]
+                )
+
+                dvar.arp[packet_key] = self.gen_arp_stats(
+                    {}, packet_dict, "arp.src.proto_ipv4", "arp.dst.proto_ipv4"
+                )
+                dvar.arp_count += 1
+
+                self.send(packet_key, packet_dict, "arp")
+                success = True
+            else:
+                success = False
+
+        except AttributeError:
+            # traceback.self.logger.info_exc()
+            self.logger.info("%s", packet_dict)
+            success = False
+
+        return success
+
+    # only doing IGMP row counts until someone writes code here
+    # ipv6 not tested
+    def find_igmp(self, packet_dict, dvar):
+        success = False
+        if "ip.proto" in packet_dict and (packet_dict["ip.proto"] != "2"):
+            return success
+
+        try:
+            # TODO do we count all ip.proto or look for other markers
+            if "ip.src" in packet_dict and "ip.dst" in packet_dict:
+                packet_key = self.gen_src_dst_key(
+                    packet_dict["ip.src"], packet_dict["ip.dst"]
+                )
+                # I don't know anything about IGMP so just set the pack count to 1 all the time
+                dvar.igmp_count += 1
+                self.send(packet_key, packet_dict, "igmp")
+                success = True
+            elif "ipv6.src" in packet_dict and "ipv6.dst" in packet_dict:
+                packet_key = self.gen_ipv6_src_dst_key(
+                    packet_dict["ipv6.src"], packet_dict["ipv6.dst"]
+                )
+                # I don't know anything about IGMP so just set the pack count to 1 all the time
+                dvar.igmp_count += 1
+                self.send(packet_key, packet_dict, "igmp")
+                success = True
+        except AttributeError:
+            self.logger.info("attribute error %s", packet_dict)
+            success = False
+        return success
+
+    def send(self, ID, PacketData, PacketProtocol):
+        self.outQ.put(
+            {
+                transitkeys.key_id: ID,
+                transitkeys.key_packet: PacketData,
+                transitkeys.key_protocol: PacketProtocol,
+            }
+        )
