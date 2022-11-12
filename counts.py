@@ -168,7 +168,8 @@ class TimesAndCounts:
                         target_window=current_window,
                     )
 
-            if current_window.num_packets > 0:
+            # current_window could be none if there are zero packets that were analyzed
+            if current_window is not None and current_window.num_packets > 0:
                 self.write_window(writer, current_window)
                 csvfile.flush()
 

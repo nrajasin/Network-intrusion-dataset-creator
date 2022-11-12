@@ -34,7 +34,9 @@ class datasetSummary:
     # set in detectors
     igmp_count = 0
     # set in detectors
-    not_analyzed_count = 0
+    not_analyzed_ip_count = 0
+    # set in detectors
+    not_analyzed_not_ip_count = 0
 
     # set in detectors
     tcp = {}

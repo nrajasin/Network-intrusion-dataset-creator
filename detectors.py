@@ -56,26 +56,36 @@ class PacketAnalyse:
                     if not self.find_udp(thePacket, self.dvar):
                         if not self.find_arp(thePacket, self.dvar):
                             if not self.find_igmp(thePacket, self.dvar):
-                                self.dvar.not_analyzed_count += 1
-                                # ip.proto does not always exist if not ip
-                                self.logger.debug("Packet was not TCP, UDP, ARP, IGMP ")
-                                packet_ip_proto = thePacket["ip.proto"]
-                                self.logger.info(
-                                    "No protocol filter for: %s", packet_ip_proto
-                                )
-                                self.logger.debug("failed to identify %s", thePacket)
+                                if "ip.proto" in thePacket:                                    
+                                    self.dvar.not_analyzed_ip_count += 1
+                                    # ip.proto does not always exist if not ip
+                                    self.logger.debug("Packet was not TCP, UDP, ARP, IGMP ")
+                                    packet_ip_proto = thePacket["ip.proto"]
+                                    self.logger.warn(
+                                        "No protocol filter for: %s", packet_ip_proto
+                                    )
+                                else:
+                                    self.dvar.not_analyzed_not_ip_count += 1
+                                    # Could look for things like ipx for non IP
+                                    self.logger.debug("Packet was not IP ")
+                                    # this was debug() which meant you had turn debug to see unalyzed
+                                    self.logger.warn("failed to identify %s", thePacket)
         end_timer = time.perf_counter()
         recognized_count = (
             self.dvar.tcp_count
             + self.dvar.udp_count
             + self.dvar.arp_count
             + self.dvar.igmp_count
-            + self.dvar.not_analyzed_count
+            + self.dvar.not_analyzed_ip_count
         )
         coarse_pps = recognized_count / (end_timer - start_timer)
-        self.logger.info(
-            f"read={recognized_count} pps={coarse_pps} tcp_count={self.dvar.tcp_count} udp_count={self.dvar.udp_count} arp_count={self.dvar.arp_count} igmp_count={self.dvar.igmp_count} tcp_pairs={self.dvar.tcp} udp_pairs={self.dvar.udp} not_analyzed={self.dvar.not_analyzed_count}"
+        long_string = (
+            f"read={recognized_count} pps={coarse_pps} "
+            f"tcp_count={self.dvar.tcp_count} udp_count={self.dvar.udp_count} arp_count={self.dvar.arp_count} igmp_count={self.dvar.igmp_count} "
+            f"tcp_pairs={self.dvar.tcp} udp_pairs={self.dvar.udp} "
+            f"not_analyzed_ip={self.dvar.not_analyzed_ip_count} not_analyzed_not_ip={self.dvar.not_analyzed_not_ip_count}"
         )
+        self.logger.info(long_string)
         self.logger.info("Exiting thread")
 
     # orders the src and dst before hashing
