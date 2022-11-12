@@ -61,16 +61,16 @@ class PacketAnalyse:
                                     # ip.proto does not always exist if not ip
                                     self.logger.debug("Packet was not TCP, UDP, ARP, IGMP ")
                                     packet_ip_proto = thePacket["ip.proto"]
-                                    # should this be debug()
-                                    self.logger.warn(
+                                    # should this be debug() or warn() You could have a lot of these
+                                    self.logger.debug(
                                         "No protocol filter for: %s", packet_ip_proto
                                     )
                                 else:
                                     self.dvar.not_analyzed_not_ip_count += 1
                                     # Could look for things like ipx for non IP
                                     self.logger.debug("Packet was not IP ")
-                                    # should this be debug()
-                                    self.logger.warn("failed to identify %s", thePacket)
+                                    # should this be debug() or warn() You could have a lot of these
+                                    self.logger.debug("failed to identify %s", thePacket)
         end_timer = time.perf_counter()
         recognized_count = (
             self.dvar.tcp_count
